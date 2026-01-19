@@ -1,8 +1,9 @@
 package edu.nchu.mall.services.product.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.nchu.mall.models.entity.User;
 import edu.nchu.mall.services.product.dao.UserMapper;
-import edu.nchu.mall.services.product.entity.User;
+
 import edu.nchu.mall.services.product.service.UserService;
 import org.springframework.stereotype.Service;
 

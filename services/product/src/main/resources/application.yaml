@@ -19,7 +19,7 @@ spring:
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: edu.nchu.mall.services.product.entity
+  type-aliases-package: edu.nchu.mall.models.entity
 
 springdoc:
   swagger-ui:

@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.product.exception;
+package edu.nchu.mall.models.exception;
 
 public class RedisDeserializeException extends RuntimeException{
     private String key;

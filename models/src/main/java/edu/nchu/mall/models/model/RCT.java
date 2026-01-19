@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.product.model;
+package edu.nchu.mall.models.model;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;

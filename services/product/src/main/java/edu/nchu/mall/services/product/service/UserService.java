@@ -1,6 +1,8 @@
 package edu.nchu.mall.services.product.service;
 
-import edu.nchu.mall.services.product.entity.User;
+
+import edu.nchu.mall.models.entity.User;
+
 import java.util.List;
 
 public interface UserService {

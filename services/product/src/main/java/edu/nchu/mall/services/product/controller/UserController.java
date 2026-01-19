@@ -2,10 +2,10 @@ package edu.nchu.mall.services.product.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.nchu.mall.models.entity.User;
 import edu.nchu.mall.services.product.dto.UserUpdate;
-import edu.nchu.mall.services.product.entity.User;
-import edu.nchu.mall.services.product.model.R;
-import edu.nchu.mall.services.product.model.RCT;
+import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.services.product.service.UserService;
 import edu.nchu.mall.services.product.utils.RedisConstants;
 import edu.nchu.mall.services.product.vo.UserVO;
@@ -33,15 +33,7 @@ public class UserController {
     @Autowired
     StringRedisTemplate stringRedisTemplate;
 
-    private ObjectMapper mapper = new ObjectMapper();
-
-    @Value("${server.port}")
-    private String port;
-
-    @GetMapping("/hello")
-    public String test(){
-        return String.format("<h1>%s</h1>", port);
-    }
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Parameters(
             @Parameter(name = "id", description = "用户ID")

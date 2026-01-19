@@ -1,7 +1,7 @@
-package edu.nchu.mall.services.product.advice;
+package edu.nchu.mall.components.advice;
 
-import edu.nchu.mall.services.product.model.R;
-import edu.nchu.mall.services.product.model.RCT;
+import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.models.model.RCT;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindingResult;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalControllerAdvice {
 
-    public static record UnknowExceptionResponseMessage(Class<?> exceptionClass, String message) {}
+    public record UnknowExceptionResponseMessage(Class<?> exceptionClass, String message) {}
 
     /**
      * 未知异常处理

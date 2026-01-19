@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.product.entity;
+package edu.nchu.mall.models.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
