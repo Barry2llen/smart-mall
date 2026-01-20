@@ -12,6 +12,10 @@
     <url>http://maven.apache.org</url>
     <modules>
         <module>product</module>
+        <module>order</module>
+        <module>coupon</module>
+        <module>member</module>
+        <module>ware</module>
     </modules>
 
     <dependencyManagement>

@@ -7,6 +7,7 @@ spring:
     import:
       - nacos:commons-mysql?group=commons
       - nacos:commons-redis?group=commons
+      - nacos:commons-redis-cache?group=commons
   cloud:
     nacos:
       config:
@@ -16,6 +17,7 @@ spring:
 #      transport:
 #        dashboard: localhost:8080
 #      eager: true
+
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -31,4 +33,4 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: edu.nchu.shop.services.product.controller
+      packages-to-scan: edu.nchu.mall.services.product.controller

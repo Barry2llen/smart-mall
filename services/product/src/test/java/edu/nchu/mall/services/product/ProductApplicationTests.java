@@ -25,26 +25,5 @@ public class ProductApplicationTests {
     void contextLoads() {
     }
 
-    private User getUser(){
-        return userService.users().get(0);
-    }
 
-    @Test
-    void insertUser() {
-        User user = new User();
-        user.setUsername("barry");
-        user.setPassword("123456");
-        userService.saveUser(user);
-    }
-
-    @Test
-    void testRedis() throws JsonProcessingException {
-        User user = getUser();
-        System.out.println("MySQL:" + user);
-        stringRedisTemplate.opsForValue().set("user:" + user.getId(), objectMapper.writeValueAsString(user));
-
-        String json = stringRedisTemplate.opsForValue().get("user:" + user.getId());
-        User user2 = objectMapper.readValue(json, User.class);
-        System.out.println("Redis:" + user2);
-    }
 }

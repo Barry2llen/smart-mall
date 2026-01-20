@@ -1,6 +1,7 @@
 package edu.nchu.mall.models.model;
 
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -30,6 +31,7 @@ public enum RCT {
         this.code = code;
     }
 
+    @JsonValue
     public int getInteger() {
         return code;
     }

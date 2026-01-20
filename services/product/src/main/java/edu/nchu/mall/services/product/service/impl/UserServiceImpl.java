@@ -5,30 +5,34 @@ import edu.nchu.mall.models.entity.User;
 import edu.nchu.mall.services.product.dao.UserMapper;
 
 import edu.nchu.mall.services.product.service.UserService;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.io.Serializable;
 
 @Service
+@CacheConfig(cacheNames = "user")
+@Transactional
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Override
-    public boolean saveUser(User user){
-        return this.save(user);
+    @CacheEvict(key = "#entity.id")
+    public boolean updateById(User entity) {
+        return super.updateById(entity);
     }
 
     @Override
-    public boolean updateUser(User user) {
-        return this.updateById(user);
+    @Cacheable(key = "#id")
+    public User getById(Serializable id){
+        return super.getById(id);
     }
 
     @Override
-    public User user(Long id) {
-        return this.getById(id);
-    }
-
-    @Override
-    public List<User> users() {
-        return this.list();
+    @CacheEvict(key = "#id")
+    public boolean removeById(Serializable id) {
+        return super.removeById(id);
     }
 }

@@ -1,16 +1,20 @@
 package edu.nchu.mall.services.product.service;
 
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.User;
 
-import java.util.List;
+import java.io.Serializable;
 
-public interface UserService {
-    boolean saveUser(User user);
+public interface UserService extends IService<User> {
+    @Override
+    boolean updateById(User entity);
 
-    boolean updateUser(User user);
+    @Override
+    User getById(Serializable id);
 
-    User user(Long id);
+    @Override
+    boolean removeById(Serializable id);
 
-    List<User> users();
+
 }
