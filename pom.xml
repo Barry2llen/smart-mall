@@ -13,6 +13,7 @@
         <module>services</module>
         <module>models</module>
         <module>components</module>
+        <module>gateway</module>
     </modules>
     <groupId>edu.nchu</groupId>
     <artifactId>smart-mall</artifactId>
