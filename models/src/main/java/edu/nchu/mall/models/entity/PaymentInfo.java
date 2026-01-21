@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @TableName("oms_payment_info")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("pi")
-    @Schema(description = "支付信息表")
+@Schema(description = "支付信息表")
 public class PaymentInfo {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

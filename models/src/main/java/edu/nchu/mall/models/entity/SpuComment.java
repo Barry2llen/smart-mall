@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @TableName("pms_spu_comment")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("spuComment")
-    @Schema(description = "商品评价")
+@Schema(description = "商品评价")
 public class SpuComment {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

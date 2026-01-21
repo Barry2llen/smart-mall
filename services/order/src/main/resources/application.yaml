@@ -17,6 +17,8 @@ spring:
 #      transport:
 #        dashboard: localhost:8080
 #      eager: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/order
 
 
 mybatis-plus:

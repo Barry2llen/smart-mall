@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @TableName("oms_order_return_reason")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("orr")
-    @Schema(description = "退货原因")
+@Schema(description = "退货原因")
 public class OrderReturnReason {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

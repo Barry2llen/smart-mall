@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("ums_member_receive_address")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("memberReceiveAddress")
-    @Schema(description = "会员收货地址")
+@Schema(description = "会员收货地址")
 public class MemberReceiveAddress {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

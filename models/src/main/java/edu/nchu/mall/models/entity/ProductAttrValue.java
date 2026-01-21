@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("pms_product_attr_value")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("productAttrValue")
-    @Schema(description = "spu属性值")
+@Schema(description = "spu属性值")
 public class ProductAttrValue {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

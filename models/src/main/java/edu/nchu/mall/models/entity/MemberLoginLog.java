@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @TableName("ums_member_login_log")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("memberLoginLog")
-    @Schema(description = "会员登录记录")
+@Schema(description = "会员登录记录")
 public class MemberLoginLog {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("sms_home_subject_spu")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("homeSubjectSpu")
-    @Schema(description = "专题商品")
+@Schema(description = "专题商品")
 public class HomeSubjectSpu {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("pms_comment_replay")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("commentReplay")
-    @Schema(description = "商品评价回复关系")
+@Schema(description = "商品评价回复关系")
 public class CommentReplay {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

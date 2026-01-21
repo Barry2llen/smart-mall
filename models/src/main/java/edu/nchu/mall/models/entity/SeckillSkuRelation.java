@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @TableName("sms_seckill_sku_relation")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("seckillSkuRelation")
-    @Schema(description = "秒杀活动商品关联")
+@Schema(description = "秒杀活动商品关联")
 public class SeckillSkuRelation {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

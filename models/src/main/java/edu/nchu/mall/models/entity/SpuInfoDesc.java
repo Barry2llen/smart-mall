@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("pms_spu_info_desc")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("spuInfoDesc")
-    @Schema(description = "spu信息介绍")
+@Schema(description = "spu信息介绍")
 public class SpuInfoDesc {
 
     @TableId(value = "spu_id", type = IdType.ASSIGN_ID)

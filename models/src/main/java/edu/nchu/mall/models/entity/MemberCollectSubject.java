@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("ums_member_collect_subject")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("memberCollectSubject")
-    @Schema(description = "会员收藏的专题活动")
+@Schema(description = "会员收藏的专题活动")
 public class MemberCollectSubject {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

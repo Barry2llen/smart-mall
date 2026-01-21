@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @TableName("oms_order_return_apply")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("ora")
-    @Schema(description = "订单退货申请")
+@Schema(description = "订单退货申请")
 public class OrderReturnApply {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

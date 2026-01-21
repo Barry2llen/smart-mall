@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @TableName("sms_seckill_sku_notice")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("seckillSkuNotice")
-    @Schema(description = "秒杀商品通知订阅")
+@Schema(description = "秒杀商品通知订阅")
 public class SeckillSkuNotice {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

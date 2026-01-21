@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("oms_order_setting")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("os")
-    @Schema(description = "订单配置信息")
+@Schema(description = "订单配置信息")
 public class OrderSetting {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

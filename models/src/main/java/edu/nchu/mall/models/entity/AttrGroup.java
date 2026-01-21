@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("pms_attr_group")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("attrGroup")
-    @Schema(description = "属性分组")
+@Schema(description = "属性分组")
 public class AttrGroup {
 
     @TableId(value = "attr_group_id", type = IdType.ASSIGN_ID)

@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @TableName("sms_spu_bounds")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("spuBounds")
-    @Schema(description = "商品spu积分设置")
+@Schema(description = "商品spu积分设置")
 public class SpuBounds {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

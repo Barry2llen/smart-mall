@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @TableName("pms_sku_images")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("skuImages")
-    @Schema(description = "sku图片")
+@Schema(description = "sku图片")
 public class SkuImages {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

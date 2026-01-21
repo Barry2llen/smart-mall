@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @TableName("pms_sku_info")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("skuInfo")
-    @Schema(description = "sku信息")
+@Schema(description = "sku信息")
 public class SkuInfo {
 
     @TableId(value = "sku_id", type = IdType.ASSIGN_ID)

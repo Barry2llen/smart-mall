@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @TableName("sms_home_adv")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("homeAdv")
-    @Schema(description = "首页轮播广告")
+@Schema(description = "首页轮播广告")
 public class HomeAdv {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

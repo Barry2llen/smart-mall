@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @TableName("sms_member_price")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("memberPrice")
-    @Schema(description = "商品会员价格")
+@Schema(description = "商品会员价格")
 public class MemberPrice {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)

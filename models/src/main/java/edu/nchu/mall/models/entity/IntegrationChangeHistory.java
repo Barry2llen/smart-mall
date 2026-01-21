@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @TableName("ums_integration_change_history")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
 @JsonTypeName("integrationChangeHistory")
-    @Schema(description = "积分变化历史记录")
+@Schema(description = "积分变化历史记录")
 public class IntegrationChangeHistory {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)
