@@ -30,4 +30,4 @@ spring:
           filters:
             - RewritePath=/product/?(?<segment>.*), /$\{segment}
 fronted:
-  url: localhost:80
+  url: localhost
