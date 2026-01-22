@@ -4,12 +4,16 @@ import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,5 +50,13 @@ public class GlobalControllerAdvice {
     @ExceptionHandler(HandlerMethodValidationException.class)
     public R<?> handlerMethodValidationException(HandlerMethodValidationException e){
         return new R<>(RCT.VALIDATION_FAILED, e.getLocalizedMessage(), null);
+    }
+
+    /**
+     * 路径错误
+     */
+    @ExceptionHandler({HttpRequestMethodNotSupportedException.class, NoResourceFoundException.class})
+    public ResponseEntity<?> noResourceFoundException(HttpRequestMethodNotSupportedException e){
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }

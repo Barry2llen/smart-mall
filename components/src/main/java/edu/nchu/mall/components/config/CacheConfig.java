@@ -34,7 +34,6 @@ public class CacheConfig {
 
         if (redisProperties.getTimeToLive() != null) {
             config = config.entryTtl((key, value) -> {
-                log.warn("testing");
                 if(value == null){
                     return Duration.ofMillis(NULL_TTL_MS);
                 }

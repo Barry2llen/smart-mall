@@ -15,11 +15,19 @@ spring:
       server-addr: 127.0.0.1:8848
     gateway:
       routes:
-        - id: baidu
-          uri: https://www.baidu.com/
+        - id: ruoyi
+          uri:
+            http://localhost:8081
           predicates:
-            - Query=url,baidu
-        - id: qq
-          uri: https://www.qq.com/
+            - Path=/ruoyi/**
+          filters:
+            - RewritePath=/ruoyi/?(?<segment>.*), /$\{segment}
+        - id: product
+          uri:
+            lb://product
           predicates:
-            - Query=url,qq
+            - Path=/product/**
+          filters:
+            - RewritePath=/product/?(?<segment>.*), /$\{segment}
+fronted:
+  url: localhost

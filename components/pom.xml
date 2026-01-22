@@ -24,6 +24,11 @@
         </dependency>
 
         <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>edu.nchu</groupId>
             <artifactId>models</artifactId>
             <version>0.0.1-SNAPSHOT</version>

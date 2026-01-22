@@ -3,6 +3,7 @@ package edu.nchu.mall.services.product.controller;
 import edu.nchu.mall.models.entity.Category;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.vo.CategoryVO;
 import edu.nchu.mall.services.product.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "Category")
 @Slf4j
@@ -68,5 +71,11 @@ public class CategoryController {
             return R.success(null);
         }
         return R.fail("delete failed");
+    }
+
+    @Operation(summary = "以树形结构查出所有分类以及子分类")
+    @GetMapping("/list")
+    public R<List<CategoryVO>> list(){
+        return R.success(categoryService.listWithTree());
     }
 }

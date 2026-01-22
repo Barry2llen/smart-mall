@@ -1,32 +1,33 @@
-# Repository Guidelines
+# 仓库指南
 
-## Project Structure & Module Organization
-- Root is a Maven multi-module: `models` (shared entities like `User`, `Order`, `PaymentInfo`), `components` (common config, cache, global exception), `services` (per-domain apps such as `product`, `order`), each with `src/main/java` and `src/main/resources`.
-- Controllers live under `edu.nchu.mall.services.<module>.controller`; Swagger config must scan the matching package (order module uses `edu.nchu.mall.services.order.controller`).
-- Database DDL lives in `sql/` (e.g., `sql/order.sql`); keep entity fields in sync with table columns and table comments.
+## 项目结构与模块组织
+- 根目录是 Maven 多模块：`models`（共享实体/DTO）、`components`（通用配置、缓存、全局异常等公共组件）、`services`（业务服务集合）、`gateway`（网关）、`ruoyi`（若依相关模块）。
+- `services` 下包含：`product`、`order`、`coupon`、`member`、`ware`，各模块均有 `src/main/java` 与 `src/main/resources`。
+- Controller 约定位于 `edu.nchu.mall.services.<module>.controller`；Swagger/Knife4j 扫描包需与模块匹配（例如 order：`edu.nchu.mall.services.order.controller`）。
+- 数据库 DDL 放在 `sql/`（如 `sql/order.sql`），实体字段需与表结构/注释保持同步。
 
-## Build, Test, and Development Commands
-- `mvn clean install` – full build plus tests; run before pushing.
-- `mvn test` – run all unit tests; default local sanity check.
-- `mvn -pl services/order -am package` (or replace `order` with another module) – faster scoped build.
-- `mvn -pl services/order -am spring-boot:run` – boot the order service locally with dependencies built.
+## 构建、测试与开发命令
+- `mvn clean install`：全量构建 + 测试，提交前建议执行。
+- `mvn test`：运行所有单测。
+- `mvn -pl services/order -am package`：按模块快速构建（将 `order` 替换为其他模块名）。
+- `mvn -pl services/order -am spring-boot:run`：本地启动指定服务并构建依赖。
 
-## Coding Style & Naming Conventions
-- Java: 4-space indent, UTF-8, braces on the same line; classes PascalCase, methods/fields camelCase, packages lowercase dotted.
-- MyBatis-Plus entities require `@TableName/@TableField/@TableId`; add `@Schema` on every field with concise descriptions aligned to DB meaning.
-- Controllers return the shared `R`/`RCT` wrapper; REST paths follow domain prefixes (`/orders`, `/order-items`, `/payment-infos`, etc.).
-- SQL/migration files should be descriptive (`order-ops-202601.sql`) rather than generic.
+## 编码风格与命名规范
+- Java：4 空格缩进、UTF-8、左大括号同行；类名 PascalCase、方法/字段 camelCase、包名小写点分。
+- MyBatis-Plus 实体需使用 `@TableName/@TableField/@TableId`；每个字段添加 `@Schema` 且语义与数据库一致。
+- Controller 返回统一的 `R`/`RCT` 包装；REST 路径按领域前缀（`/orders`、`/order-items`、`/payment-infos` 等）。
+- SQL/迁移文件命名需语义化（如 `order-ops-202601.sql`）。
 
-## Testing Guidelines
-- Tests reside in `src/test/java`; mirror target class names with `*Test` suffix (`OrderServiceImplTest`).
-- Prefer JUnit 5; mock external IO (DB/Redis/Nacos) when feasible to keep suites fast and deterministic.
-- Document any skipped tests or manual verification in PRs; default expectation is `mvn test` green.
+## 测试规范
+- 测试放在 `src/test/java`，与目标类同名并加 `*Test` 后缀（如 `OrderServiceImplTest`）。
+- 优先使用 JUnit 5；外部依赖（DB/Redis/Nacos）尽量 mock，保证测试稳定快速。
+- 如需跳过测试或手工验证，请在 PR 中说明；默认期望 `mvn test` 通过。
 
-## Commit & Pull Request Guidelines
-- Commit message format: `type(scope): subject` (e.g., `feat(order): add refund api`), subject ≤50 chars; wrap body at 72 chars.
-- PRs must summarize changes, list test commands/results, and link issues/Jira; include screenshots or curl examples for API/behavior changes.
-- Call out schema/config impacts (Nacos, Redis, DB migrations) and rollout/rollback notes to ease review.
+## 提交与 PR 规范
+- 提交格式：`type(scope): subject`（如 `feat(order): add refund api`），subject ≤ 50 字符，正文 72 字符换行。
+- PR 需包含变更概要、测试命令/结果、关联 Issue/Jira；API/行为改动需附截图或 curl 示例。
+- 涉及 Nacos/Redis/DB 变更时，需说明兼容性与发布/回滚要点。
 
-## Security & Configuration Tips
-- Do not commit secrets; keep local overrides in ignored files like `application-local.yml`.
-- When changing cache keys, TTLs, or DB DDL (e.g., `sql/order.sql`), explain compatibility and deployment steps in the PR. 
+## 安全与配置提示
+- 禁止提交敏感信息；本地覆盖配置请放入忽略文件（如 `application-local.yml`）。
+- 调整缓存 key/TTL 或 DDL 时，请在 PR 说明兼容与部署步骤。
