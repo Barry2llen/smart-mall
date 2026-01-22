@@ -20,7 +20,16 @@ public class CorsConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        corsConfiguration.setAllowedOriginPatterns(Arrays.asList("https?://" + frontedUrl));
+        if (frontedUrl == null || frontedUrl.trim().isEmpty() || "*".equals(frontedUrl.trim())) {
+            corsConfiguration.setAllowedOriginPatterns(Arrays.asList("*"));
+        } else {
+            corsConfiguration.setAllowedOriginPatterns(Arrays.asList(
+                    "http://" + frontedUrl,
+                    "https://" + frontedUrl,
+                    "http://" + frontedUrl + ":*",
+                    "https://" + frontedUrl + ":*"
+            ));
+        }
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.setAllowCredentials(true);

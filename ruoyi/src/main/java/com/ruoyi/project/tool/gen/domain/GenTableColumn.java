@@ -1,6 +1,6 @@
 package com.ruoyi.project.tool.gen.domain;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.web.domain.BaseEntity;
 

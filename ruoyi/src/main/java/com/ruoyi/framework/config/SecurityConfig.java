@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import com.ruoyi.framework.config.properties.PermitAllUrlProperties;
 import com.ruoyi.framework.security.filter.JwtAuthenticationTokenFilter;
 import com.ruoyi.framework.security.handle.AuthenticationEntryPointImpl;
@@ -63,6 +65,7 @@ public class SecurityConfig
     protected SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception
     {
         return httpSecurity
+            .cors(Customizer.withDefaults())
             // CSRF 关闭（无 session）
             .csrf(csrf -> csrf.disable())
             // 关闭默认缓存与 frame 限制
@@ -73,10 +76,15 @@ public class SecurityConfig
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 放行白名单与静态资源
             .authorizeHttpRequests(requests -> {
-                permitAllUrl.getUrls().forEach(url -> requests.antMatchers(url).permitAll());
-                requests.antMatchers("/login", "/register", "/captchaImage").permitAll()
-                    .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
-                    .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()
+                permitAllUrl.getUrls().forEach(url -> requests.requestMatchers(url).permitAll());
+                requests.requestMatchers("/login", "/register", "/captchaImage").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/", "/*.html", "/profile/**").permitAll()
+                    .requestMatchers(
+                        new AntPathRequestMatcher("/**/*.html"),
+                        new AntPathRequestMatcher("/**/*.css"),
+                        new AntPathRequestMatcher("/**/*.js"))
+                    .permitAll()
+                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml", "/druid/**").permitAll()
                     .anyRequest().authenticated();
             })
             // 登出处理
