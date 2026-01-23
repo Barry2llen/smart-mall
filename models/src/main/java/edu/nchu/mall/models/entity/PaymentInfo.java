@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("oms_payment_info")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("pi")
 @Schema(description = "支付信息表")
 public class PaymentInfo {
 

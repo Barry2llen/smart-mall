@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("ums_member_level")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("memberLevel")
 @Schema(description = "会员等级")
 public class MemberLevel {
 

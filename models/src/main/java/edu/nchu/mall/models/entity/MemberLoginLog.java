@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("ums_member_login_log")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("memberLoginLog")
 @Schema(description = "会员登录记录")
 public class MemberLoginLog {
 

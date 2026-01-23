@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("wms_ware_order_task_detail")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("wareOrderTaskDetail")
 @Schema(description = "库存工作单")
 public class WareOrderTaskDetail {
 

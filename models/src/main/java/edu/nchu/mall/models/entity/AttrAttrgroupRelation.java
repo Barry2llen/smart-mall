@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("pms_attr_attrgroup_relation")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("attrAttrgroupRelation")
 @Schema(description = "属性&属性分组关联")
 public class AttrAttrgroupRelation {
 

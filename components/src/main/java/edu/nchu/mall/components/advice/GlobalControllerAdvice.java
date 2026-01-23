@@ -59,4 +59,12 @@ public class GlobalControllerAdvice {
     public ResponseEntity<?> noResourceFoundException(HttpRequestMethodNotSupportedException e){
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+    /**
+     * 非法id：Long.valueOf转换时出错
+     */
+    @ExceptionHandler(NumberFormatException.class)
+    public ResponseEntity<?> numberFormatException(NumberFormatException e){
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
 }

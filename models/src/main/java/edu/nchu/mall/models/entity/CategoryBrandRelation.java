@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("pms_category_brand_relation")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("categoryBrandRelation")
 @Schema(description = "品牌分类关联")
 public class CategoryBrandRelation {
 

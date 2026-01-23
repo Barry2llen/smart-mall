@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("wms_purchase_detail")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("purchaseDetail")
 @Schema(description = "wms_purchase_detail?")
 public class PurchaseDetail {
 

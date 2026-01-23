@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("ums_member_collect_spu")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("memberCollectSpu")
 @Schema(description = "会员收藏的商品")
 public class MemberCollectSpu {
 

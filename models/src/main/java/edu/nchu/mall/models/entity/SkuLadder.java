@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("sms_sku_ladder")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("skuLadder")
 @Schema(description = "商品阶梯价格")
 public class SkuLadder {
 

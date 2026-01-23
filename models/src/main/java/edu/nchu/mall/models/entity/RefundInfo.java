@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("oms_refund_info")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("ri")
 @Schema(description = "退款信息")
 public class RefundInfo {
 

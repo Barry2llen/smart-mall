@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("ums_integration_change_history")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("integrationChangeHistory")
 @Schema(description = "积分变化历史记录")
 public class IntegrationChangeHistory {
 

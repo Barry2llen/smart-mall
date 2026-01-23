@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("pms_sku_sale_attr_value")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("skuSaleAttrValue")
 @Schema(description = "sku销售属性&值")
 public class SkuSaleAttrValue {
 

@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("pms_spu_info")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("spuInfo")
 @Schema(description = "spu信息")
 public class SpuInfo {
 

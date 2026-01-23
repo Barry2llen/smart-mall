@@ -18,4 +18,9 @@ public interface CategoryService extends IService<Category> {
     boolean removeById(Serializable id);
 
     public List<CategoryVO> listWithTree();
+
+    boolean removeByIds(List<Long> list);
+
+    @Override
+    boolean save(Category entity);
 }

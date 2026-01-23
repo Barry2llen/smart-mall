@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("sms_coupon_spu_category_relation")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("couponSpuCategoryRelation")
 @Schema(description = "优惠券分类关联")
 public class CouponSpuCategoryRelation {
 

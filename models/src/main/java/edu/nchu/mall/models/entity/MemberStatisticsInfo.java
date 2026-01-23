@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("ums_member_statistics_info")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("memberStatisticsInfo")
 @Schema(description = "会员统计信息")
 public class MemberStatisticsInfo {
 

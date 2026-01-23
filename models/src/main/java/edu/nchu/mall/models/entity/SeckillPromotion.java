@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("sms_seckill_promotion")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("seckillPromotion")
 @Schema(description = "秒杀活动")
 public class SeckillPromotion {
 

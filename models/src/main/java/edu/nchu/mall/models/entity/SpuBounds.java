@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("sms_spu_bounds")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("spuBounds")
 @Schema(description = "商品spu积分设置")
 public class SpuBounds {
 

@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("oms_order_operate_history")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("ooh")
 @Schema(description = "订单操作历史记录")
 public class OrderOperateHistory {
 

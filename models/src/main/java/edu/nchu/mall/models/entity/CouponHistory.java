@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("sms_coupon_history")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("couponHistory")
 @Schema(description = "优惠券领取历史记录")
 public class CouponHistory {
 

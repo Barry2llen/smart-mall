@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.product.controller;
 
+import edu.nchu.mall.models.dto.CategoryDTO;
 import edu.nchu.mall.models.entity.Category;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
@@ -9,12 +10,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Tag(name = "Category")
@@ -39,11 +43,16 @@ public class CategoryController {
             @Parameter(name = "body", description = "更新后的Category")
     })
     @Operation(summary = "更新Category")
-    @PutMapping("/{sid}")
-    public R<?> updateCategory(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid,
-                               @RequestBody Category body) {
-        body.setCatId(Long.parseLong(sid));
-        boolean res = categoryService.updateById(body);
+    @PutMapping()
+    public R<?> updateCategory(@RequestBody @Valid CategoryDTO dto) {
+        if(dto.getCatId() == null){
+            return R.fail("catId不能为空");
+        }
+
+        Category category = new Category();
+        BeanUtils.copyProperties(dto,category);
+        log.info("update category:{}",category);
+        boolean res = categoryService.updateById(category);
         if (res) {
             return R.success(null);
         }
@@ -53,9 +62,11 @@ public class CategoryController {
     @Parameters(@Parameter(name = "body", description = "新增的Category"))
     @Operation(summary = "创建Category")
     @PostMapping
-    public R<?> createCategory(@RequestBody Category body) {
-        body.setCatId(null);
-        boolean res = categoryService.save(body);
+    public R<?> createCategory(@RequestBody @Valid CategoryDTO dto) {
+        Category category = new Category();
+        BeanUtils.copyProperties(dto,category);
+        category.setCatId(null);
+        boolean res = categoryService.save(category);
         if (res) {
             return R.success(null);
         }
@@ -67,6 +78,17 @@ public class CategoryController {
     @DeleteMapping("/{sid}")
     public R<?> deleteCategory(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
         boolean res = categoryService.removeById(Long.parseLong(sid));
+        if (res) {
+            return R.success(null);
+        }
+        return R.fail("delete failed");
+    }
+
+    @Parameters(@Parameter(name = "ids", description = "要删除分类的id"))
+    @DeleteMapping
+    @Operation(summary = "删除多个分类")
+    public R<?> deleteCategories(@RequestBody Long[] ids){
+        boolean res = categoryService.removeByIds(Arrays.asList(ids));
         if (res) {
             return R.success(null);
         }
