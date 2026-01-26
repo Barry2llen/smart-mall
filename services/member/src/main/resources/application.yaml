@@ -8,18 +8,15 @@ spring:
       - nacos:commons-mysql?group=commons
       - nacos:commons-redis?group=commons
       - nacos:commons-redis-cache?group=commons
+      - nacos:commons?group=commons
   cloud:
     nacos:
       config:
         namespace: dev
-
+        file-extension: yaml
       server-addr: 127.0.0.1:8848
   datasource:
     url: jdbc:mysql://localhost:3306/member
-
-mybatis-plus:
-  mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: edu.nchu.mall.models.entity
 
 springdoc:
   swagger-ui:
