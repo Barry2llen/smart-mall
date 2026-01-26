@@ -1,6 +1,8 @@
 package edu.nchu.mall.services.product.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.entity.Category;
 import edu.nchu.mall.models.vo.CategoryVO;
@@ -33,17 +35,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             evict = {@CacheEvict(key = "#entity.catId"), @CacheEvict(key = "'tree'")}
     )
     public boolean updateById(Category entity) {
-        Integer showStatus = entity.getShowStatus();
-        entity.setShowStatus(null);
-
-        UpdateWrapper<Category> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq("cat_id", entity.getCatId());
-
-        if (showStatus != null) {
-            updateWrapper.set("show_status", showStatus);
-        }
-
-        return baseMapper.update(entity, updateWrapper) > 0;
+        return super.updateById(entity);
     }
 
     @Override
@@ -101,6 +93,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     @Override
     @CacheEvict(key = "'tree'")
     public boolean save(Category entity) {
-        return false;
+        return super.save(entity);
     }
 }

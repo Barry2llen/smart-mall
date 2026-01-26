@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -56,7 +57,7 @@ public class GlobalControllerAdvice {
      * 路径错误
      */
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class, NoResourceFoundException.class})
-    public ResponseEntity<?> noResourceFoundException(HttpRequestMethodNotSupportedException e){
+    public ResponseEntity<?> noResourceFoundException(Exception e){
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
@@ -65,6 +66,14 @@ public class GlobalControllerAdvice {
      */
     @ExceptionHandler(NumberFormatException.class)
     public ResponseEntity<?> numberFormatException(NumberFormatException e){
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * json格式错误
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<?> httpMessageNotReadableException(HttpMessageNotReadableException e){
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 }

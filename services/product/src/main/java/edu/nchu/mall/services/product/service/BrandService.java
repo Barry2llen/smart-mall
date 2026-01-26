@@ -1,9 +1,11 @@
 package edu.nchu.mall.services.product.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import edu.nchu.mall.models.dto.BrandDTO;
 import edu.nchu.mall.models.entity.Brand;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface BrandService extends IService<Brand> {
     @Override
@@ -14,4 +16,7 @@ public interface BrandService extends IService<Brand> {
 
     @Override
     boolean removeById(Serializable id);
+
+    @Override
+    List<Brand> list();
 }

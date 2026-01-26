@@ -16,6 +16,8 @@
         <module>coupon</module>
         <module>member</module>
         <module>ware</module>
+        <module>file</module>
+        <module>ruoyi</module>
     </modules>
 
     <dependencyManagement>

@@ -3,21 +3,18 @@ server:
 spring:
   application:
     name: gateway
-  config:
-    import:
-      - nacos:commons-mysql?group=commons
-      - nacos:commons-redis?group=commons
-      - nacos:commons-redis-cache?group=commons
   cloud:
     nacos:
       config:
         namespace: dev
+        import-check:
+          enabled: false
       server-addr: 127.0.0.1:8848
     gateway:
       routes:
         - id: ruoyi
           uri:
-            http://localhost:8081
+            lb://ruoyi
           predicates:
             - Path=/ruoyi/**
           filters:
@@ -29,5 +26,12 @@ spring:
             - Path=/product/**
           filters:
             - RewritePath=/product/?(?<segment>.*), /$\{segment}
+        - id: file
+          uri:
+            lb://file
+          predicates:
+            - Path=/file/**
+          filters:
+            - RewritePath=/file/?(?<segment>.*), /$\{segment}
 fronted:
   url: localhost

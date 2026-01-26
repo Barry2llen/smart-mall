@@ -1,0 +1,18 @@
+server:
+  port: 8700
+spring:
+  application:
+    name: file
+  config:
+    import:
+      - nacos:commons-file?group=commons
+  cloud:
+    nacos:
+      config:
+        namespace: dev
+        file-extension: yaml
+      server-addr: 127.0.0.1:8848
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG

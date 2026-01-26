@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.product.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.models.dto.CategoryDTO;
 import edu.nchu.mall.models.entity.Category;
 import edu.nchu.mall.models.model.R;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Category")
 @Slf4j
@@ -29,6 +31,8 @@ public class CategoryController {
 
     @Autowired
     CategoryService categoryService;
+
+    ObjectMapper objectMapper = new ObjectMapper();
 
     @Parameters(@Parameter(name = "sid", description = "Category主键"))
     @Operation(summary = "获取Category详情")
@@ -44,14 +48,15 @@ public class CategoryController {
     })
     @Operation(summary = "更新Category")
     @PutMapping()
-    public R<?> updateCategory(@RequestBody @Valid CategoryDTO dto) {
-        if(dto.getCatId() == null){
+    public R<?> updateCategory(@RequestBody Map<String, Object> body) {
+        if(body.get("catId") == null){
             return R.fail("catId不能为空");
         }
+        if(body.size() == 2 && body.get("showStatus") != null) {
+            return R.success(null);
+        }
 
-        Category category = new Category();
-        BeanUtils.copyProperties(dto,category);
-        log.info("update category:{}",category);
+        Category category = objectMapper.convertValue(body, Category.class);
         boolean res = categoryService.updateById(category);
         if (res) {
             return R.success(null);

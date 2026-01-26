@@ -8,12 +8,23 @@ spring:
       - nacos:commons-mysql?group=commons
       - nacos:commons-redis?group=commons
       - nacos:commons-redis-cache?group=commons
+      - nacos:commons-callback?group=commons
   cloud:
     nacos:
       config:
         namespace: dev
       server-addr: 127.0.0.1:8848
-#    sentinel:
+    openfeign:
+      client:
+        config:
+          default:
+            logger-level: full
+            connect-timeout: 5000
+            read-timeout: 10000
+  cache:
+    redis:
+      key-prefix: 'product::'
+  #    sentinel:
 #      transport:
 #        dashboard: localhost:8080
 #      eager: true
@@ -37,3 +48,6 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: edu.nchu.mall.services.product.controller
+
+callback:
+  host: "http://barry2llen-smart-mall.oss-cn-guangzhou.aliyuncs.com/"

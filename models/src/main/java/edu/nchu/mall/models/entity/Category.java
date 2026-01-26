@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("pms_category")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@c")
-@JsonTypeName("category")
 @Schema(description = "商品三级分类")
 public class Category {
 
