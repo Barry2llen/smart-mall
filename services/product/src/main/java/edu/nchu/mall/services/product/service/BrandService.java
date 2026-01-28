@@ -1,7 +1,7 @@
 package edu.nchu.mall.services.product.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import edu.nchu.mall.models.dto.BrandDTO;
 import edu.nchu.mall.models.entity.Brand;
 
 import java.io.Serializable;
@@ -18,5 +18,8 @@ public interface BrandService extends IService<Brand> {
     boolean removeById(Serializable id);
 
     @Override
-    List<Brand> list();
+    List<Brand> list(IPage<Brand> page);
+
+    @Override
+    boolean save(Brand entity);
 }

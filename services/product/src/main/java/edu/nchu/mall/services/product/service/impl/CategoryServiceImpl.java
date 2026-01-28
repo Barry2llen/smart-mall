@@ -1,12 +1,17 @@
 package edu.nchu.mall.services.product.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.entity.Category;
+import edu.nchu.mall.models.entity.CategoryBrandRelation;
+import edu.nchu.mall.models.vo.CategoryBrandRelationVO;
 import edu.nchu.mall.models.vo.CategoryVO;
+import edu.nchu.mall.services.product.dao.CategoryBrandRelationMapper;
 import edu.nchu.mall.services.product.dao.CategoryMapper;
+import edu.nchu.mall.services.product.service.CategoryBrandRelationService;
 import edu.nchu.mall.services.product.service.CategoryService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +35,33 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     @Autowired
     StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    CategoryBrandRelationMapper categoryBrandRelationMapper;
+
+    @Autowired
+    CategoryBrandRelationService categoryBrandRelationService;
+
     @Override
     @Caching(
             evict = {@CacheEvict(key = "#entity.catId"), @CacheEvict(key = "'tree'")}
     )
     public boolean updateById(Category entity) {
+        if(entity.getName() != null){
+            //同步更新关联表中的分类名称
+            LambdaQueryWrapper<CategoryBrandRelation> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(CategoryBrandRelation::getCatelogId, entity.getCatId());
+            List<Long> brandIds = categoryBrandRelationMapper.selectList(queryWrapper)
+                    .stream().map(CategoryBrandRelation::getBrandId).toList();
+
+            LambdaUpdateWrapper<CategoryBrandRelation> updateWrapper = Wrappers.lambdaUpdate();
+            updateWrapper.eq(CategoryBrandRelation::getCatelogId, entity.getCatId())
+                    .set(CategoryBrandRelation::getCatelogName, entity.getName());
+            categoryBrandRelationMapper.update(updateWrapper);
+
+            if (!brandIds.isEmpty()) {
+                brandIds.forEach(brandId -> categoryBrandRelationService.removeCacheByBrandId(brandId));
+            }
+        }
         return super.updateById(entity);
     }
 
@@ -85,7 +112,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public boolean removeByIds(List<Long> list) {
         boolean res = super.removeByIds(list);
         if(res){
-            list.forEach(id -> stringRedisTemplate.delete("category::" + id));
+            list.forEach(id -> stringRedisTemplate.delete("product::category::" + id));
         }
         return res;
     }

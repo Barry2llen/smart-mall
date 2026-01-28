@@ -1,8 +1,10 @@
 package edu.nchu.mall.services.product.controller;
 
+import edu.nchu.mall.models.dto.AttrDTO;
 import edu.nchu.mall.models.entity.Attr;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.vo.AttrVO;
 import edu.nchu.mall.services.product.service.AttrService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,10 +13,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Attr")
+import java.util.List;
+
+@Tag(name = "商品属性")
 @Slf4j
 @RestController
 @RequestMapping("/attrs")
@@ -23,44 +28,41 @@ public class AttrController {
     @Autowired
     AttrService attrService;
 
-    @Parameters(@Parameter(name = "sid", description = "Attr主键"))
-    @Operation(summary = "获取Attr详情")
+    @Parameters(@Parameter(name = "sid", description = "商品属性主键"))
+    @Operation(summary = "获取商品属性详情")
     @GetMapping("/{sid}")
-    public R<?> getAttr(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
-        Attr data = attrService.getById(Long.parseLong(sid));
+    public R<AttrVO> getAttr(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
+        AttrVO data = attrService.getVoById(Long.parseLong(sid));
         return new R<>(RCT.SUCCESS, "success", data);
     }
 
     @Parameters({
-            @Parameter(name = "sid", description = "Attr主键"),
-            @Parameter(name = "body", description = "更新后的Attr")
+            @Parameter(name = "body", description = "更新后的商品属性")
     })
-    @Operation(summary = "更新Attr")
-    @PutMapping("/{sid}")
-    public R<?> updateAttr(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid,
-                               @RequestBody Attr body) {
-        body.setAttrId(Long.parseLong(sid));
-        boolean res = attrService.updateById(body);
+    @Operation(summary = "更新商品属性")
+    @PutMapping
+    public R<?> updateAttr(@RequestBody AttrDTO dto) {
+        boolean res = attrService.updateById(dto);
         if (res) {
             return R.success(null);
         }
         return R.fail("update failed");
     }
 
-    @Parameters(@Parameter(name = "body", description = "新增的Attr"))
-    @Operation(summary = "创建Attr")
+    @Parameters(@Parameter(name = "body", description = "新增的商品属性"))
+    @Operation(summary = "创建商品属性")
     @PostMapping
-    public R<?> createAttr(@RequestBody Attr body) {
-        body.setAttrId(null);
-        boolean res = attrService.save(body);
+    public R<?> createAttr(@RequestBody AttrDTO dto) {
+        dto.setAttrId(null);
+        boolean res = attrService.save(dto);
         if (res) {
             return R.success(null);
         }
         return R.fail("create failed");
     }
 
-    @Parameters(@Parameter(name = "sid", description = "Attr主键"))
-    @Operation(summary = "删除Attr")
+    @Parameters(@Parameter(name = "sid", description = "商品属性主键"))
+    @Operation(summary = "删除商品属性")
     @DeleteMapping("/{sid}")
     public R<?> deleteAttr(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
         boolean res = attrService.removeById(Long.parseLong(sid));
@@ -68,5 +70,28 @@ public class AttrController {
             return R.success(null);
         }
         return R.fail("delete failed");
+    }
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页码"),
+            @Parameter(name = "pageSize", description = "每页数量"),
+            @Parameter(name = "attrName", description = "(可选)属性分组名称或分组ID模糊查询"),
+            @Parameter(name = "catelogId", description = "(可选)分类id")
+    })
+    @Operation(summary = "分页获取属性分组列表")
+    @GetMapping("/list")
+    public R<List<AttrVO>> listAttrGroups(@RequestParam Integer pageNum,
+                                          @RequestParam Integer pageSize,
+                                          @RequestParam(required = false) String attrName,
+                                          @RequestParam(required = false) Integer catelogId) {
+        return R.success(attrService.list(pageNum, pageSize, attrName, catelogId));
+    }
+
+    @Parameters(@Parameter(name = "groupId", description = "属性分组主键"))
+    @Operation(summary = "根据属性分组id获取属性列表")
+    @GetMapping("/group/{groupId}")
+    public R<List<AttrVO>> getByGroupId(@PathVariable Long groupId) {
+        List<AttrVO> data = attrService.getVosByGroupId(groupId);
+        return new R<>(RCT.SUCCESS, "success", data);
     }
 }

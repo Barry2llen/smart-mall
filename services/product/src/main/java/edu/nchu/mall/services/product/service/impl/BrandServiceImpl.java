@@ -1,11 +1,15 @@
 package edu.nchu.mall.services.product.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import edu.nchu.mall.components.feign.OSSFeignClient;
-import edu.nchu.mall.models.dto.BrandDTO;
 import edu.nchu.mall.models.entity.Brand;
+import edu.nchu.mall.models.entity.CategoryBrandRelation;
+import edu.nchu.mall.models.vo.CategoryBrandRelationVO;
 import edu.nchu.mall.services.product.dao.BrandMapper;
 import edu.nchu.mall.services.product.service.BrandService;
+import edu.nchu.mall.services.product.service.CategoryBrandRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -22,12 +26,26 @@ import java.util.List;
 @Transactional
 public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements BrandService {
 
+    @Autowired
+    CategoryBrandRelationService categoryBrandRelationService;
+
     @Override
     @Caching(evict = {
+
             @CacheEvict(key = "#entity.brandId"),
-            @CacheEvict(key = "'list'")
+            @CacheEvict(value = "brand:list", allEntries = true)
     })
     public boolean updateById(Brand entity) {
+        if(entity.getName() != null){
+            //同步更新关联表中的品牌名称
+            List<CategoryBrandRelationVO> relations = categoryBrandRelationService.getRelatedCategoriesByBrandId(entity.getBrandId());
+            LambdaUpdateWrapper<CategoryBrandRelation> wrapper = Wrappers.lambdaUpdate();
+            wrapper.in(CategoryBrandRelation::getBrandId,
+                    relations.stream().map(CategoryBrandRelationVO::getId).toList())
+                    .set(CategoryBrandRelation::getBrandName, entity.getName());
+            categoryBrandRelationService.update(wrapper);
+            categoryBrandRelationService.removeCacheByBrandId(entity.getBrandId());
+        }
         return super.updateById(entity);
     }
 
@@ -40,15 +58,23 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#id"),
-            @CacheEvict(key = "'list'")
+            @CacheEvict(value = "brand:list", allEntries = true)
     })
     public boolean removeById(Serializable id) {
         return super.removeById(id);
     }
 
     @Override
-    @Cacheable(key = "'list'")
-    public List<Brand> list(){
-        return super.list();
+    @Caching(evict = {
+            @CacheEvict(value = "brand:list", allEntries = true)
+    })
+    public boolean save(Brand entity) {
+        return super.save(entity);
+    }
+
+    @Override
+    @Cacheable(value = "brand:list", key = "#page.current + ':' + #page.size")
+    public List<Brand> list(IPage<Brand> page){
+        return super.list(page);
     }
 }

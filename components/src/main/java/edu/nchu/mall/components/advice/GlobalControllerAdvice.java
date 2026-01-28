@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.core.MethodParameter;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -15,8 +17,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Hidden
@@ -30,27 +35,58 @@ public class GlobalControllerAdvice {
      * 未知异常处理
      */
     @ExceptionHandler(Throwable.class)
-    public R<?> exception(Throwable throwable) {
-        log.error("未知异常：" + throwable.getMessage(), throwable);
-        return new R<>(RCT.UNKNOWN_EXCEPTION, "未知异常", new UnknowExceptionResponseMessage(throwable.getClass(), throwable.getMessage()));
+    public ResponseEntity<R<?>> exception(Throwable throwable) {
+        log.error("未知异常：{}", throwable.getMessage(), throwable);
+        return new ResponseEntity<>(new R<>(RCT.UNKNOWN_EXCEPTION, "未知异常", new UnknowExceptionResponseMessage(throwable.getClass(), throwable.getMessage())), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     /**
      * 参数校验异常处理
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public R<?> methodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public ResponseEntity<R<?>> methodArgumentNotValidException(MethodArgumentNotValidException e) {
         BindingResult bindingResult = e.getBindingResult();
         Map<String,String> errorMap = bindingResult.getFieldErrors().stream().collect(Collectors.toMap(FieldError::getField, fieldError -> fieldError.getDefaultMessage() == null ? "" : fieldError.getDefaultMessage()));
-        return new R<>(RCT.VALIDATION_FAILED, "参数校验失败", errorMap);
+        return new ResponseEntity<>(new R<>(RCT.VALIDATION_FAILED, "参数校验失败", errorMap), HttpStatus.BAD_REQUEST);
     }
 
     /**
      * 参数校验异常处理
      */
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public R<?> handlerMethodValidationException(HandlerMethodValidationException e){
-        return new R<>(RCT.VALIDATION_FAILED, e.getLocalizedMessage(), null);
+    public ResponseEntity<R<?>> handlerMethodValidationException(HandlerMethodValidationException e){
+        Map<String, String> errorMap = new LinkedHashMap<>();
+        e.getAllValidationResults().forEach(result -> {
+            MethodParameter methodParameter = result.getMethodParameter();
+            String parameterName = methodParameter.getParameterName();
+            if (parameterName == null || parameterName.isBlank()) {
+                parameterName = "arg" + methodParameter.getParameterIndex();
+            }
+
+            String message = result.getResolvableErrors().stream()
+                    .map(MessageSourceResolvable::getDefaultMessage)
+                    .filter(Objects::nonNull)
+                    .filter(msg -> !msg.isBlank())
+                    .distinct()
+                    .collect(Collectors.joining("; "));
+            if (!message.isBlank()) {
+                errorMap.put(parameterName, message);
+            }
+        });
+
+        String responseMessage = errorMap.isEmpty()
+                ? (e.getReason() == null || e.getReason().isBlank() ? "参数校验失败" : e.getReason())
+                : "参数校验失败";
+
+        return new ResponseEntity<>(new R<>(RCT.VALIDATION_FAILED, responseMessage, errorMap.isEmpty() ? null : errorMap), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * 缺少参数
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<R<?>> missingServletRequestParameterException(MissingServletRequestParameterException e){
+        return new ResponseEntity<>(new R<>(RCT.VALIDATION_FAILED, "缺少参数：" + e.getParameterName(), null), HttpStatus.BAD_REQUEST);
     }
 
     /**
