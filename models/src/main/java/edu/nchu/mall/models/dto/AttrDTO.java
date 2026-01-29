@@ -40,7 +40,7 @@ public class AttrDTO {
     @Schema(description = "启用状态[0 - 禁用，1 - 启用]")
     private Long enable;
 
-    @Schema(description = "所属分类")
+    @Schema(description = "所属分类id")
     private Long catelogId;
 
     @Schema(description = "所属分组id")

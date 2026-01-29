@@ -48,33 +48,65 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     @Autowired
     StringRedisTemplate redisTemplate;
 
+    /**
+     * 根据属性分组ID删除缓存
+     */
+    @CacheEvict(value = "attr:group", key = "#groupId", condition = "#groupId != null")
+    public void deleteCacheByGroupId(Long groupId) {
+    }
+
+    /**
+     * 清除无关联属性缓存
+     */
+    @CacheEvict(value = "attr:no-relation", allEntries = true)
+    public void evictNoRelationCache() {
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#dto.attrId"),
             @CacheEvict(value = "attr:page", allEntries = true),
-            @CacheEvict(value = "attr:group", key = "#dto.attrGroupId")
     })
     public boolean updateById(AttrDTO dto) {
+        var self = (AttrServiceImpl) AopContext.currentProxy();
+        Long catlogId = dto.getCatelogId();
+        Long attrGroupId = dto.getAttrGroupId();
+
+        boolean setCatlogIdNull = catlogId != null && catlogId.equals(0L);
+        boolean setAttrGroupIdNull = attrGroupId != null && attrGroupId.equals(0L);
+
+        if (setCatlogIdNull || setAttrGroupIdNull) {
+            self.deleteAttrRelation(dto.getAttrId());
+        }
+
         Attr attr = new Attr();
         BeanUtils.copyProperties(dto, attr);
-        LambdaUpdateWrapper<AttrAttrgroupRelation> uw = Wrappers.lambdaUpdate();
-        uw.eq(AttrAttrgroupRelation::getAttrId, dto.getAttrId())
-                .set(AttrAttrgroupRelation::getAttrGroupId,  dto.getAttrGroupId())
-                .set(AttrAttrgroupRelation::getAttrSort, dto.getAttrSort());
-        return relationMapper.update(uw) > 0 && super.updateById(attr);
+        AttrAttrgroupRelation relation = new AttrAttrgroupRelation();
+        BeanUtils.copyProperties(dto, relation);
+
+        LambdaUpdateWrapper<Attr> uw1 = Wrappers.lambdaUpdate();
+        uw1.eq(Attr::getAttrId, dto.getAttrId())
+            .set(setCatlogIdNull, Attr::getCatelogId, null);
+
+        LambdaUpdateWrapper<AttrAttrgroupRelation> uw2 = Wrappers.lambdaUpdate();
+        uw2.eq(AttrAttrgroupRelation::getAttrId, dto.getAttrId())
+                .set(setAttrGroupIdNull, AttrAttrgroupRelation::getAttrGroupId, null);
+
+        relationMapper.update(relation, uw2);
+        return super.update(attr, uw1);
     }
 
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "attr:page", allEntries = true),
-            @CacheEvict(value = "attr:group", key = "#dto.attrGroupId")
+            @CacheEvict(value = "attr:group", key = "#dto.attrGroupId", condition = "#dto.attrGroupId != null")
     })
     public boolean save(AttrDTO dto) {
         Attr attr = new Attr();
         BeanUtils.copyProperties(dto, attr);
         boolean res = super.save(attr);
 
-        if (!res) return false;
+        if (!res || dto.getAttrGroupId() == null) return res;
 
         AttrAttrgroupRelation relation = new AttrAttrgroupRelation();
         relation.setAttrId(attr.getAttrId());
@@ -87,7 +119,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     @Cacheable(key = "#id")
     public AttrVO getVoById(Serializable id) {
         Attr attr = super.getById(id);
-        return this.convert2VO(attr);
+        return attr != null ? this.convert2VO(attr) : null;
     }
 
     @Override
@@ -104,7 +136,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#id"),
-            @CacheEvict(value = "attr:page", allEntries = true)
+            @CacheEvict(value = "attr:page", allEntries = true),
     })
     public boolean removeById(Serializable id) {
         Attr attr = super.getById(id);
@@ -112,7 +144,9 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
 
         Long groupId = this.convert2VO(attr).getAttrGroupId();
         if (groupId != null) {
+            // 删除属性分组下已关联属性的缓存
             redisTemplate.delete("product::attr:group::" + groupId);
+            ((AttrServiceImpl)AopContext.currentProxy()).evictNoRelationCache();
         }
 
         LambdaQueryWrapper<AttrAttrgroupRelation> qw = Wrappers.lambdaQuery();
@@ -131,7 +165,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
             }
         }
 
-        IPage<Attr> page = new Page<>((long) (pageNum - 1) * pageSize, pageSize);
+        IPage<Attr> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Attr> qw = new LambdaQueryWrapper<>();
         qw.orderByAsc(Attr::getAttrId);
         if (!attrName.isEmpty()) {
@@ -146,17 +180,82 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         return this.convert2VOList(super.list(page, qw));
     }
 
+    @Override
+    @Caching(evict = {
+            @CacheEvict(key = "#id"),
+            @CacheEvict(value = "attr:page", allEntries = true),
+            @CacheEvict(value = "attr:no-relation", allEntries = true)
+    })
+    public boolean deleteAttrRelation(long id) {
+        LambdaQueryWrapper<AttrAttrgroupRelation> qw = Wrappers.lambdaQuery();
+        qw.eq(AttrAttrgroupRelation::getAttrId, id);
+        AttrAttrgroupRelation relation = relationMapper.selectOne(qw);
+
+        if (relation == null || relation.getAttrGroupId() == null) return false;
+
+        if (relationMapper.delete(qw) <= 0) return false;
+
+        // 删除属性分组下已关联属性的缓存
+        var self = (AttrServiceImpl) AopContext.currentProxy();
+        self.deleteCacheByGroupId(relation.getAttrGroupId());
+        return true;
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(key = "#attrId"),
+            @CacheEvict(value = "attr:page", allEntries = true),
+            @CacheEvict(value = "attr:no-relation", allEntries = true)
+    })
+    public boolean newAttrRelation(Long attrId, Long attrGroupId) {
+        var relation = new AttrAttrgroupRelation();
+        relation.setAttrId(attrId);
+        relation.setAttrGroupId(attrGroupId);
+
+        // 更新catlogId
+        AttrGroup attrGroup = attrGroupMapper.selectById(attrGroupId);
+        if (attrGroup == null) return false;
+
+        LambdaUpdateWrapper<Attr> uw = Wrappers.lambdaUpdate();
+        uw.eq(Attr::getAttrId, attrId)
+          .set(Attr::getCatelogId, attrGroup.getCatelogId());
+
+        boolean res = baseMapper.update(uw) > 0 && relationMapper.insert(relation) > 0;
+
+        // 删除属性分组下已关联属性的缓存
+        if (res){
+            var self = (AttrServiceImpl) AopContext.currentProxy();
+            self.deleteCacheByGroupId(attrGroupId);
+        }
+
+        return res;
+    }
+
+    @Override
+    @Cacheable(value = "attr:no-relation", key = "#pageNum + ':' + #pageSize + (#catlogId == null ? '' : (':' + #catlogId.toString()))")
+    public List<AttrVO> listNonRelationAttrs(Integer pageNum, Integer pageSize, Long catlogId) {
+        IPage<Attr> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Attr> qw = Wrappers.lambdaQuery();
+        qw.and(i -> {
+            i.isNull(Attr::getCatelogId); // 总是查询为 NULL 的记录
+            if (catlogId != null) {
+                i.or().eq(Attr::getCatelogId, catlogId); // 如果有 ID，再 OR 一下
+            }
+        });
+        return this.convert2VOList(super.list(page, qw)).stream().filter(vo -> vo.getAttrGroupId() == null).toList();
+    }
+
     @Cacheable(value = "attr:page", key = "#pageNum + ':' + #pageSize")
     public List<AttrVO> list(Integer pageNum, Integer pageSize) {
-        IPage<Attr> page = new Page<>((long) (pageNum - 1) * pageSize, pageSize);
+        IPage<Attr> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Attr> qw = new LambdaQueryWrapper<>();
         qw.orderByAsc(Attr::getAttrId);
-        return (this.convert2VOList(super.list(page, qw)));
+        return this.convert2VOList(super.list(page, qw));
     }
 
     @Cacheable(value = "attr:page", key = "#pageNum + ':' + #pageSize + ':' + #catelogId")
     public List<AttrVO> list(Integer pageNum, Integer pageSize, Integer catelogId) {
-        IPage<Attr> page = new Page<>((long) (pageNum - 1) * pageSize, pageSize);
+        IPage<Attr> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Attr> qw = new LambdaQueryWrapper<>();
         qw.eq(Attr::getCatelogId, catelogId);
         qw.orderByAsc(Attr::getAttrId);
@@ -168,14 +267,20 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         BeanUtils.copyProperties(attr, vo);
         LambdaQueryWrapper<AttrAttrgroupRelation> qw = Wrappers.lambdaQuery();
         qw.eq(AttrAttrgroupRelation::getAttrId, attr.getAttrId());
-        Long groupId = relationMapper.selectOne(qw).getAttrGroupId();
-        vo.setAttrGroupId(groupId);
-        AttrGroup group = attrGroupMapper.selectById(groupId);
-        if (group != null) vo.setAttrGroupName(group.getAttrGroupName());
-        Category category = categoryMapper.selectById(attr.getCatelogId());
-        if (category != null) vo.setCatelogName(category.getName());
+        AttrAttrgroupRelation relation = relationMapper.selectOne(qw);
+        if (relation != null) {
+            Long groupId = relation.getAttrGroupId();
+            vo.setAttrGroupId(groupId);
+            AttrGroup group = attrGroupMapper.selectById(groupId);
+            if (group != null) vo.setAttrGroupName(group.getAttrGroupName());
+        }
+        if (attr.getCatelogId() != null) {
+            Category category = categoryMapper.selectById(attr.getCatelogId());
+            if (category != null) vo.setCatelogName(category.getName());
+        }
         return vo;
     }
+
 
     private List<AttrVO> convert2VOList(List<Attr> attrs) {
         return attrs.stream().map(this::convert2VO).toList();

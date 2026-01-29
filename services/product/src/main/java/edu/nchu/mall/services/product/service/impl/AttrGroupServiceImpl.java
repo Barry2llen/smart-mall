@@ -86,7 +86,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
 
     @Cacheable(value = "attrGroup:page", key = "#pageNum + ':' + #pageSize")
     public List<AttrGroup> list(Integer pageNum, Integer pageSize) {
-        IPage<AttrGroup> page = new Page<>((long) (pageNum - 1) * pageSize, pageSize);
+        IPage<AttrGroup> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<AttrGroup> qw = new LambdaQueryWrapper<>();
         qw.orderByAsc(AttrGroup::getSort);
         return super.list(page, qw);
@@ -94,7 +94,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
 
     @Cacheable(value = "attrGroup:page", key = "#pageNum + ':' + #pageSize + ':' + #catelogId")
     public List<AttrGroup> list(Integer pageNum, Integer pageSize, Integer catelogId) {
-        IPage<AttrGroup> page = new Page<>((long) (pageNum - 1) * pageSize, pageSize);
+        IPage<AttrGroup> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<AttrGroup> qw = new LambdaQueryWrapper<>();
         qw.eq(AttrGroup::getCatelogId, catelogId);
         qw.orderByAsc(AttrGroup::getSort);
@@ -112,7 +112,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
             }
         }
 
-        IPage<AttrGroup> page = new Page<>((long) (pageNum - 1) * pageSize, pageSize);
+        IPage<AttrGroup> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<AttrGroup> qw = new LambdaQueryWrapper<>();
         qw.orderByAsc(AttrGroup::getSort);
         if (!attrGroupName.isEmpty()) {

@@ -36,11 +36,10 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "Brand")
+@Tag(name = "品牌管理")
 @Slf4j
 @RestController
 @RequestMapping("/brands")

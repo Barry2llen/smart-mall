@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "Category")
+@Tag(name = "商品分类")
 @Slf4j
 @RestController
 @RequestMapping("/categories")

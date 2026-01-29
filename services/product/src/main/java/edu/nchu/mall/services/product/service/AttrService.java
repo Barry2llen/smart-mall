@@ -21,4 +21,10 @@ public interface AttrService extends IService<Attr> {
     boolean removeById(Serializable id);
 
     List<AttrVO> list(Integer pageNum, Integer pageSize, String attrName, Integer catelogId);
+
+    boolean deleteAttrRelation(long id);
+
+    boolean newAttrRelation(Long attrId, Long attrGroupId);
+
+    List<AttrVO> listNonRelationAttrs(Integer pageNum, Integer pageSize, Long catelogId);
 }

@@ -41,6 +41,14 @@ public class GlobalControllerAdvice {
     }
 
     /**
+     * 参数不合法
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<R<?>> illegalArgumentException(IllegalArgumentException e){
+        return new ResponseEntity<>(new R<>(RCT.VALIDATION_FAILED, "参数不合法：" + e.getMessage(), null), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * 参数校验异常处理
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
