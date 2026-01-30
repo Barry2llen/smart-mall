@@ -12,7 +12,7 @@ public interface CategoryBrandRelationService extends IService<CategoryBrandRela
     @Override
     boolean updateById(CategoryBrandRelation entity);
 
-    boolean removeCacheByBrandId(Long brandId);
+    void removeCacheByBrandId(Long brandId);
 
     @Override
     boolean update(Wrapper<CategoryBrandRelation> wrapper);
@@ -26,4 +26,6 @@ public interface CategoryBrandRelationService extends IService<CategoryBrandRela
     boolean removeById(Serializable id);
 
     List<CategoryBrandRelationVO> getRelatedCategoriesByBrandId(Long brandId);
+
+    List<CategoryBrandRelationVO> getRelatedBrandsByCatId(Long catId);
 }

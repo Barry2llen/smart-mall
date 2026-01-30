@@ -62,9 +62,16 @@ public class CategoryBrandRelationController {
     }
 
     @Parameters(@Parameter(name = "brandId", description = "品牌id"))
-    @Operation(summary = "获取分类关联的品牌列表")
+    @Operation(summary = "获取品牌关联的分类列表")
     @GetMapping("/catelog/{brandId}")
     public R<List<CategoryBrandRelationVO>> getCatelogList(@PathVariable("brandId") Long brandId) {
         return R.success(categoryBrandRelationService.getRelatedCategoriesByBrandId(brandId));
+    }
+
+    @Parameters(@Parameter(name = "catId", description = "分类id"))
+    @Operation(summary = "获取分类关联的品牌列表")
+    @GetMapping("/brand/{catId}")
+    public R<List<CategoryBrandRelationVO>> getBrandList(@PathVariable("catId") Long catId) {
+        return R.success(categoryBrandRelationService.getRelatedBrandsByCatId(catId));
     }
 }

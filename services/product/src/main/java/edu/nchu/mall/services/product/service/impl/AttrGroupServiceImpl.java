@@ -5,9 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.nchu.mall.models.entity.Attr;
+import edu.nchu.mall.models.entity.AttrAttrgroupRelation;
 import edu.nchu.mall.models.entity.AttrGroup;
 import edu.nchu.mall.models.vo.AttrGroupVO;
+import edu.nchu.mall.models.vo.AttrGroupWithAttrVO;
+import edu.nchu.mall.services.product.dao.AttrAttrgroupRelationMapper;
 import edu.nchu.mall.services.product.dao.AttrGroupMapper;
+import edu.nchu.mall.services.product.dao.AttrMapper;
 import edu.nchu.mall.services.product.service.AttrGroupService;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
@@ -16,11 +21,11 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -30,7 +35,22 @@ import java.util.List;
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup> implements AttrGroupService {
 
     @Autowired
-    StringRedisTemplate redisTemplate;
+    AttrAttrgroupRelationMapper relationMapper;
+
+    @Autowired
+    AttrMapper attrMapper;
+
+    @CacheEvict(cacheNames = "attrGroup:byCatelog", key = "#catelogId")
+    public void deleteAttrGroupCacheByCatelogId(Long catelogId) {
+    }
+
+    @CacheEvict(key = "#id")
+    public void deleteAttrGroupCacheById(Long id) {
+    }
+
+    @CacheEvict(cacheNames = "attrGroup:attrsInGroupByCatelog", key = "#catelogId")
+    public void deleteAttrsInGroupCacheByCatelog(Long catelogId) {
+    }
 
     @Override
     @Caching(evict = {
@@ -38,7 +58,11 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
             @CacheEvict(value = "attrGroup:page", allEntries = true),
     })
     public boolean updateById(AttrGroup entity) {
-        redisTemplate.delete("attrGroup:byCatelog::" + entity.getCatelogId());
+        var self = (AttrGroupServiceImpl) AopContext.currentProxy();
+        self.deleteAttrGroupCacheByCatelogId(entity.getCatelogId());
+        if (entity.getAttrGroupId() != null) {
+            self.deleteAttrGroupCacheById(entity.getAttrGroupId());
+        }
         return super.updateById(entity);
     }
 
@@ -54,10 +78,13 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
             @CacheEvict(value = "attrGroup:page", allEntries = true)
     })
     public boolean removeById(Serializable id) {
-        AttrGroupServiceImpl self = (AttrGroupServiceImpl) AopContext.currentProxy();
+        var self = (AttrGroupServiceImpl) AopContext.currentProxy();
         AttrGroup attrGroup = self.getById(id);
         if (attrGroup != null) {
-            redisTemplate.delete("attrGroup:byCatelog::" + attrGroup.getCatelogId());
+            self.deleteAttrGroupCacheByCatelogId(attrGroup.getCatelogId());
+            if (attrGroup.getAttrGroupId() != null) {
+                self.deleteAttrGroupCacheById(attrGroup.getAttrGroupId());
+            }
         }
         return super.removeById(id);
     }
@@ -67,20 +94,28 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
             @CacheEvict(value = "attrGroup:page", allEntries = true)
     })
     public boolean removeByIds(Collection<?> ids) {
+        var self = (AttrGroupServiceImpl) AopContext.currentProxy();
         List<AttrGroup> attrGroups = super.listByIds((Collection<? extends Serializable>) ids);
-        attrGroups .forEach(entity -> {
-            redisTemplate.delete("product::attrGroup::" + entity.getAttrGroupId());
-            redisTemplate.delete("attrGroup:byCatelog::" + entity.getCatelogId());
+        attrGroups.forEach(entity -> {
+            self.deleteAttrGroupCacheById(entity.getAttrGroupId());
+            self.deleteAttrGroupCacheByCatelogId(entity.getCatelogId());
+            if (entity.getAttrGroupId() != null) {
+                self.deleteAttrGroupCacheById(entity.getAttrGroupId());
+            }
         });
         return super.removeByIds(ids);
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "attrGroup:page", allEntries = true)
+            @CacheEvict(value = "attrGroup:page", allEntries = true),
     })
     public boolean save(AttrGroup entity) {
-        redisTemplate.delete("attrGroup:byCatelog::" + entity.getCatelogId());
+        var self = (AttrGroupServiceImpl) AopContext.currentProxy();
+        self.deleteAttrGroupCacheByCatelogId(entity.getCatelogId());
+        if (entity.getAttrGroupId() != null) {
+            self.deleteAttrGroupCacheById(entity.getAttrGroupId());
+        }
         return super.save(entity);
     }
 
@@ -139,5 +174,32 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
                     BeanUtils.copyProperties(attrGroup, vo);
                     return  vo;
                 }).toList();
+    }
+
+    @Override
+    @Cacheable(cacheNames = "attrGroup:attrsInGroupByCatelog", key = "#catelogId")
+    public List<AttrGroupWithAttrVO> listAttrInGroupByCatelogId(long catelogId) {
+        LambdaQueryWrapper<AttrGroup> qw = Wrappers.lambdaQuery();
+        qw.eq(AttrGroup::getCatelogId, catelogId);
+        return super.list(qw).stream().map(entity -> {
+            AttrGroupWithAttrVO vo = new AttrGroupWithAttrVO();
+            vo.setAttrs(List.of());
+            BeanUtils.copyProperties(entity, vo);
+            return vo;
+        }).map(vo -> {
+            LambdaQueryWrapper<AttrAttrgroupRelation> relationQw = Wrappers.lambdaQuery();
+            relationQw.eq(AttrAttrgroupRelation::getAttrGroupId, vo.getAttrGroupId());
+            List<Long> attrIds = relationMapper.selectList(relationQw).stream().map(AttrAttrgroupRelation::getAttrId).toList();
+            if (!attrIds.isEmpty()) {
+                LambdaQueryWrapper <Attr> attrQw = Wrappers.lambdaQuery();
+                attrQw.in(Attr::getAttrId, attrIds);
+                vo.setAttrs(attrMapper.selectList(attrQw).stream().map(attr -> {
+                    AttrGroupWithAttrVO.AttrInfo info = new AttrGroupWithAttrVO.AttrInfo();
+                    BeanUtils.copyProperties(attr, info);
+                    return info;
+                }).toList());
+            }
+            return vo;
+        }).toList();
     }
 }

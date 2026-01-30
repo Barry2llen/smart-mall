@@ -18,4 +18,10 @@ public class CategoryBrandRelationVO {
 
     @Schema(description = "分类名称")
     private String catelogName;
+
+    @Schema(description = "品牌id")
+    private Long brandId;
+
+    @Schema(description = "品牌名称")
+    private String brandName;
 }

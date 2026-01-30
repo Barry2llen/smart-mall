@@ -36,12 +36,18 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     @Autowired
     CategoryMapper categoryMapper;
 
-    @Autowired
-    StringRedisTemplate redisTemplate;
+    @CacheEvict(cacheNames = "categoryBrandRelation:brand", key = "#brandId")
+    public void removeCacheByBrandId(Long brandId){
+    }
+
+    @CacheEvict(cacheNames = "categoryBrandRelation:cat", key = "#catelogId")
+    public void removeCacheByCatelogId(Long catelogId){
+    }
 
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "categoryBrandRelation:brand", key = "#entity.brandId"),
+            @CacheEvict(cacheNames = "categoryBrandRelation:cat", key = "#entity.catelogId")
     })
     public boolean updateById(CategoryBrandRelation entity) {
         return super.updateById(entity);
@@ -61,6 +67,7 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     @Override
     @Caching(evict = {
             @CacheEvict(cacheNames = "categoryBrandRelation:brand", key = "#brandId"),
+            @CacheEvict(cacheNames = "categoryBrandRelation:cat", key = "#catelogId")
     })
     public boolean save(Long brandId, Long catelogId) {
         CategoryBrandRelation entity = new CategoryBrandRelation();
@@ -74,13 +81,13 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     @Override
     @CacheEvict(key = "#id")
     public boolean removeById(Serializable id) {
-        CategoryBrandRelation entity = ((CategoryBrandRelationServiceImpl)AopContext.currentProxy()).getById(id);
-        redisTemplate.delete("product::categoryBrandRelation:brand::" + entity.getBrandId());
-        return super.removeById(id);
-    }
+        var self = (CategoryBrandRelationServiceImpl)AopContext.currentProxy();
 
-    public boolean removeCacheByBrandId(Long brandId){
-        return redisTemplate.delete("product::categoryBrandRelation:brand::" + brandId);
+        CategoryBrandRelation entity = self.getById(id);
+        removeCacheByBrandId(entity.getBrandId());
+        removeCacheByCatelogId(entity.getCatelogId());
+
+        return super.removeById(id);
     }
 
     @Override
@@ -88,6 +95,19 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     public List<CategoryBrandRelationVO> getRelatedCategoriesByBrandId(Long brandId) {
         LambdaQueryWrapper<CategoryBrandRelation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CategoryBrandRelation::getBrandId, brandId);
+        List<CategoryBrandRelation> res = this.list(queryWrapper);
+        return res.stream().map(entity -> {
+            CategoryBrandRelationVO vo = new CategoryBrandRelationVO();
+            BeanUtils.copyProperties(entity, vo);
+            return vo;
+        }).toList();
+    }
+
+    @Override
+    @Cacheable(cacheNames = "categoryBrandRelation:cat", key = "#catId")
+    public List<CategoryBrandRelationVO> getRelatedBrandsByCatId(Long catId) {
+        LambdaQueryWrapper<CategoryBrandRelation> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(CategoryBrandRelation::getCatelogId, catId);
         List<CategoryBrandRelation> res = this.list(queryWrapper);
         return res.stream().map(entity -> {
             CategoryBrandRelationVO vo = new CategoryBrandRelationVO();

@@ -7,6 +7,7 @@ import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.validation.Groups;
 import edu.nchu.mall.models.vo.AttrGroupVO;
+import edu.nchu.mall.models.vo.AttrGroupWithAttrVO;
 import edu.nchu.mall.services.product.service.AttrGroupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -110,5 +111,12 @@ public class AttrGroupController {
                                              @RequestParam(required = false) String attrGroupName,
                                              @RequestParam(required = false) Integer catelogId) {
         return R.success(attrGroupService.list(pageNum, pageSize, attrGroupName, catelogId));
+    }
+
+    @Parameters(@Parameter(name = "sid", description = "分类id"))
+    @GetMapping("/with-attr/by-catelog/{sid}")
+    @Operation(summary = "根据分类id获取属性分组及其关联的属性")
+    public R<List<AttrGroupWithAttrVO>> listAttrInGroupByCatelogId(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
+        return R.success(attrGroupService.listAttrInGroupByCatelogId(Long.parseLong(sid)));
     }
 }
