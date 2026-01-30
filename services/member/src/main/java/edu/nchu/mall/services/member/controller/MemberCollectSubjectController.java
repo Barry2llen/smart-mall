@@ -1,20 +1,28 @@
 package edu.nchu.mall.services.member.controller;
 
-import edu.nchu.mall.models.entity.MemberCollectSubject;
+import edu.nchu.mall.models.dto.MemberCollectSubjectDTO;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.validation.Groups;
+import edu.nchu.mall.models.vo.MemberCollectSubjectVO;
 import edu.nchu.mall.services.member.service.MemberCollectSubjectService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "MemberCollectSubject")
+import java.util.List;
+
+@Tag(name = "会员收藏专题管理")
 @Slf4j
 @RestController
 @RequestMapping("/member-collect-subjects")
@@ -23,44 +31,40 @@ public class MemberCollectSubjectController {
     @Autowired
     MemberCollectSubjectService memberCollectSubjectService;
 
-    @Parameters(@Parameter(name = "sid", description = "MemberCollectSubject主键"))
-    @Operation(summary = "获取MemberCollectSubject详情")
+    @Parameters(@Parameter(name = "sid", description = "会员收藏专题主键"))
+    @Operation(summary = "获取会员收藏专题详情")
     @GetMapping("/{sid}")
-    public R<?> getMemberCollectSubject(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
-        MemberCollectSubject data = memberCollectSubjectService.getById(Long.parseLong(sid));
+    public R<MemberCollectSubjectVO> getMemberCollectSubject(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
+        MemberCollectSubjectVO data = memberCollectSubjectService.getMemberCollectSubjectById(Long.parseLong(sid));
         return new R<>(RCT.SUCCESS, "success", data);
     }
 
     @Parameters({
-            @Parameter(name = "sid", description = "MemberCollectSubject主键"),
-            @Parameter(name = "body", description = "更新后的MemberCollectSubject")
+            @Parameter(name = "dto", description = "更新的会员收藏专题信息")
     })
-    @Operation(summary = "更新MemberCollectSubject")
-    @PutMapping("/{sid}")
-    public R<?> updateMemberCollectSubject(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid,
-                               @RequestBody MemberCollectSubject body) {
-        body.setId(Long.parseLong(sid));
-        boolean res = memberCollectSubjectService.updateById(body);
+    @Operation(summary = "更新会员收藏专题")
+    @PutMapping
+    public R<?> updateMemberCollectSubject(@RequestBody @Validated(Groups.Update.class) MemberCollectSubjectDTO dto) {
+        boolean res = memberCollectSubjectService.updateById(dto);
         if (res) {
             return R.success(null);
         }
         return R.fail("update failed");
     }
 
-    @Parameters(@Parameter(name = "body", description = "新增的MemberCollectSubject"))
-    @Operation(summary = "创建MemberCollectSubject")
+    @Parameters(@Parameter(name = "dto", description = "新增的会员收藏专题"))
+    @Operation(summary = "创建会员收藏专题")
     @PostMapping
-    public R<?> createMemberCollectSubject(@RequestBody MemberCollectSubject body) {
-        body.setId(null);
-        boolean res = memberCollectSubjectService.save(body);
+    public R<?> createMemberCollectSubject(@RequestBody @Validated(Groups.Create.class) MemberCollectSubjectDTO dto) {
+        boolean res = memberCollectSubjectService.save(dto);
         if (res) {
             return R.success(null);
         }
         return R.fail("create failed");
     }
 
-    @Parameters(@Parameter(name = "sid", description = "MemberCollectSubject主键"))
-    @Operation(summary = "删除MemberCollectSubject")
+    @Parameters(@Parameter(name = "sid", description = "会员收藏专题主键"))
+    @Operation(summary = "删除会员收藏专题")
     @DeleteMapping("/{sid}")
     public R<?> deleteMemberCollectSubject(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
         boolean res = memberCollectSubjectService.removeById(Long.parseLong(sid));
@@ -68,5 +72,16 @@ public class MemberCollectSubjectController {
             return R.success(null);
         }
         return R.fail("delete failed");
+    }
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页码"),
+            @Parameter(name = "pageSize", description = "每页数量")
+    })
+    @Operation(summary = "获取会员收藏专题列表")
+    @GetMapping
+    public R<List<MemberCollectSubjectVO>> list(@RequestParam @Valid @NotNull Integer pageNum,
+                                               @RequestParam @Valid @NotNull Integer pageSize) {
+        return R.success(memberCollectSubjectService.getMemberCollectSubjects(pageNum, pageSize));
     }
 }

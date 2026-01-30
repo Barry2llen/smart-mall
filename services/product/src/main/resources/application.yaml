@@ -20,7 +20,7 @@ spring:
     redis:
       key-prefix: 'product::'
   datasource:
-    url: jdbc:mysql://localhost:3306/product
+    url: jdbc:mysql://localhost:3306/product?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
 
 springdoc:
   swagger-ui:
