@@ -6,9 +6,22 @@ spring:
   config:
     import:
       - nacos:commons-file?group=commons
+      - nacos:commons-callback?group=commons
   cloud:
     nacos:
       config:
         namespace: dev
         file-extension: yaml
       server-addr: 127.0.0.1:8848
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: edu.nchu.shop.services.file.controller

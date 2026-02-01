@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.coupon.controller;
 
+import edu.nchu.mall.models.dto.SkuReductionDTO;
 import edu.nchu.mall.models.entity.SkuFullReduction;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
@@ -68,5 +69,14 @@ public class SkuFullReductionController {
             return R.success(null);
         }
         return R.fail("delete failed");
+    }
+
+    @PostMapping("/saveInfo")
+    public R<?> saveInfo(@RequestBody SkuReductionDTO dto) {
+        boolean res = skuFullReductionService.saveSkuReduction(dto);
+        if (res) {
+            return R.success(null);
+        }
+        return R.fail("save failed");
     }
 }

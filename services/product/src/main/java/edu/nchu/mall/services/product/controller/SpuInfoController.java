@@ -1,5 +1,7 @@
 package edu.nchu.mall.services.product.controller;
 
+import edu.nchu.mall.models.dto.SpuInfoDTO;
+import edu.nchu.mall.models.dto.SpuSaveDTO;
 import edu.nchu.mall.models.entity.SpuInfo;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
@@ -13,10 +15,12 @@ import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-@Hidden
-@Tag(name = "SpuInfo")
+import java.util.List;
+
+@Tag(name = "Spu信息")
 @Slf4j
 @RestController
 @RequestMapping("/spu-infos")
@@ -25,50 +29,54 @@ public class SpuInfoController {
     @Autowired
     SpuInfoService spuInfoService;
 
-    @Parameters(@Parameter(name = "sid", description = "SpuInfo主键"))
-    @Operation(summary = "获取SpuInfo详情")
+    @Parameters(@Parameter(name = "sid", description = "Spu信息主键"))
+    @Operation(summary = "获取Spu信息详情")
     @GetMapping("/{sid}")
-    public R<?> getSpuInfo(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
+    public R<SpuInfo> getSpuInfo(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
         SpuInfo data = spuInfoService.getById(Long.parseLong(sid));
         return new R<>(RCT.SUCCESS, "success", data);
     }
 
-    @Parameters({
-            @Parameter(name = "sid", description = "SpuInfo主键"),
-            @Parameter(name = "body", description = "更新后的SpuInfo")
-    })
-    @Operation(summary = "更新SpuInfo")
-    @PutMapping("/{sid}")
-    public R<?> updateSpuInfo(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid,
-                               @RequestBody SpuInfo body) {
-        body.setId(Long.parseLong(sid));
-        boolean res = spuInfoService.updateById(body);
-        if (res) {
-            return R.success(null);
-        }
-        return R.fail("update failed");
-    }
-
-    @Parameters(@Parameter(name = "body", description = "新增的SpuInfo"))
-    @Operation(summary = "创建SpuInfo")
+    @Parameters(@Parameter(name = "body", description = "新增的Spu信息"))
+    @Operation(summary = "创建Spu信息")
     @PostMapping
-    public R<?> createSpuInfo(@RequestBody SpuInfo body) {
-        body.setId(null);
-        boolean res = spuInfoService.save(body);
+    public R<?> saveSpuInfo(@RequestBody SpuSaveDTO dto) {
+        boolean res = spuInfoService.save(dto);
         if (res) {
             return R.success(null);
         }
         return R.fail("create failed");
     }
 
-    @Parameters(@Parameter(name = "sid", description = "SpuInfo主键"))
-    @Operation(summary = "删除SpuInfo")
-    @DeleteMapping("/{sid}")
-    public R<?> deleteSpuInfo(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
-        boolean res = spuInfoService.removeById(Long.parseLong(sid));
+    @Parameters({
+            @Parameter(name = "dto", description = "要更新的Spu信息字段")
+    })
+    @Operation(summary = "更新spu信息")
+    @PutMapping
+    public R<?> updateSpuInfo(@RequestBody @Validated SpuInfoDTO dto) {
+        boolean res = spuInfoService.updateById(dto);
         if (res) {
             return R.success(null);
         }
-        return R.fail("delete failed");
+        return R.fail("update failed");
+    }
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页码"),
+            @Parameter(name = "pageSize", description = "每页数量"),
+            @Parameter(name = "catalogId", description = "分类id（可选）"),
+            @Parameter(name = "brandId", description = "品牌id（可选）"),
+            @Parameter(name = "key", description = "模糊查询关键字（可选）（id或名字）"),
+            @Parameter(name = "status", description = "上架状态（可选）")
+    })
+    @Operation(summary = "获取spu信息列表")
+    @GetMapping("/list")
+    public R<List<SpuInfo>> listSpuInfo(@RequestParam Integer pageNum,
+                                        @RequestParam Integer pageSize,
+                                        @RequestParam(required = false) Long catalogId,
+                                        @RequestParam(required = false) Long brandId,
+                                        @RequestParam(required = false) String key,
+                                        @RequestParam(required = false) Integer status) {
+        return R.success(spuInfoService.list(pageNum, pageSize, catalogId, brandId, key, status));
     }
 }

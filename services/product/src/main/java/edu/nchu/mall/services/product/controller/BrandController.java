@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import edu.nchu.mall.components.feign.OSSFeignClient;
+import edu.nchu.mall.components.feign.file.OSSFeignClient;
 import edu.nchu.mall.models.callback.BrandCallback;
 import edu.nchu.mall.models.dto.BrandDTO;
 import edu.nchu.mall.models.entity.Brand;
@@ -99,7 +99,7 @@ public class BrandController {
         ObjectMapper mapper = new ObjectMapper();
         //阿里云OSS不支持大写字段
         mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-        Map<String,Object> map = mapper.convertValue(dto, new TypeReference<Map<String, Object>>() {});
+        Map<String,Object> map = mapper.convertValue(dto, new TypeReference<>() {});
         return ossFeignClient.getPostSignatureForOssUpload(callback, map);
     }
 

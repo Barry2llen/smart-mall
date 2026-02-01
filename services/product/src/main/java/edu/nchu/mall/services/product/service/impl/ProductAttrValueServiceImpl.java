@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 @Service
 @CacheConfig(cacheNames = "productAttrValue")
@@ -33,5 +34,10 @@ public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueMap
     @CacheEvict(key = "#id")
     public boolean removeById(Serializable id) {
         return super.removeById(id);
+    }
+
+    @Override
+    public boolean saveBatch(Collection<ProductAttrValue> entityList) {
+        return entityList.isEmpty() || super.saveBatch(entityList);
     }
 }

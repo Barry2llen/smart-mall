@@ -4,6 +4,7 @@ import edu.nchu.mall.models.entity.WareOrderTask;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.services.ware.service.WareOrderTaskService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -14,6 +15,7 @@ import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+@Hidden
 @Tag(name = "WareOrderTask")
 @Slf4j
 @RestController

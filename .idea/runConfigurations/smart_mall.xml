@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="smart-mall" type="CompoundRunConfigurationType">
+    <toRun name="CouponMainApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="FileMainApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="GatewayMainApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="MemberMainApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="ProductMainApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="RuoYiApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="WareMainApplication" type="SpringBootApplicationConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

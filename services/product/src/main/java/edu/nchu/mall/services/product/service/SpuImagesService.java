@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.SpuImages;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 public interface SpuImagesService extends IService<SpuImages> {
     @Override
@@ -14,4 +15,7 @@ public interface SpuImagesService extends IService<SpuImages> {
 
     @Override
     boolean removeById(Serializable id);
+
+    @Override
+    boolean saveBatch(Collection<SpuImages> entityList);
 }

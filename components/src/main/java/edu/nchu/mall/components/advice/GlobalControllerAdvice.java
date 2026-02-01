@@ -109,8 +109,8 @@ public class GlobalControllerAdvice {
      * 非法id：Long.valueOf转换时出错
      */
     @ExceptionHandler(NumberFormatException.class)
-    public ResponseEntity<?> numberFormatException(NumberFormatException e){
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    public ResponseEntity<R<?>> numberFormatException(NumberFormatException e){
+        return new ResponseEntity<>(R.fail("id错误"), HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -118,6 +118,6 @@ public class GlobalControllerAdvice {
      */
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<?> httpMessageNotReadableException(HttpMessageNotReadableException e){
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(R.fail("json格式错误"), HttpStatus.BAD_REQUEST);
     }
 }

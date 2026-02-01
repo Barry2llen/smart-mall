@@ -10,11 +10,17 @@ import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.tea.TeaException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.models.model.CallbackBody;
+import edu.nchu.mall.models.model.R;
+import edu.nchu.shop.services.file.pojo.File;
 import edu.nchu.shop.services.file.properties.OSSProperties;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -25,11 +31,14 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@Tag(name = "OSS请求")
+@Tag(name = "OSS文件上传请求")
 @Slf4j
 @Controller
 @RequestMapping("/oss")
 public class OSSController {
+
+    @Value("${spring.cloud.alibaba.oss.callbackUrl.file:none}")
+    String callback;
 
     @Autowired
     OSS ossClient;
@@ -145,6 +154,7 @@ public class OSSController {
         return defaultCredentials;
     }
 
+    @Hidden
     @DeleteMapping("/object")
     public ResponseEntity<?> deleteObject(@RequestParam String bucket, @RequestParam String filename){
         try{
@@ -155,6 +165,7 @@ public class OSSController {
         return ResponseEntity.ok().build();
     }
 
+    @Hidden
     @PostMapping("/get_post_signature_for_oss_upload")
     public ResponseEntity<Map<String, String>> getPostSignatureForOssUpload(@RequestParam String callback,
                                                                             @RequestBody Map<String, Object> callbackVars) throws Exception {
@@ -258,5 +269,17 @@ public class OSSController {
         } catch (Exception e) {
             throw new RuntimeException("Failed to calculate HMAC-SHA256", e);
         }
+    }
+
+    @PostMapping("/callback")
+    @Operation(summary = "阿里云OSS上传的回调函数，当你获取签名并上传成功后，收到的返回结果即为此接口的返回结果")
+    public ResponseEntity<R<File>> callback(@RequestBody CallbackBody body) {
+        return new ResponseEntity<>(R.success(new File(body.getFilename())), HttpStatus.OK);
+    }
+
+    @Operation(summary = "获取文件上传的临时签名")
+    @GetMapping("/getFileUploadSignature")
+    public ResponseEntity<Map<String, String>> getFileUploadSignature() throws Exception {
+        return getPostSignatureForOssUpload(callback + "/oss/callback", Map.of());
     }
 }

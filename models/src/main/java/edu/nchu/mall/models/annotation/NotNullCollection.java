@@ -1,4 +1,4 @@
-package edu.nchu.mall.components.annotation;
+package edu.nchu.mall.models.annotation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;

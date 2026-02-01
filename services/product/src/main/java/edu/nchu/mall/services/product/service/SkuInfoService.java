@@ -1,17 +1,19 @@
 package edu.nchu.mall.services.product.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import edu.nchu.mall.models.dto.SkuInfoDTO;
 import edu.nchu.mall.models.entity.SkuInfo;
+import edu.nchu.mall.models.vo.SkuInfoVO;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.List;
 
 public interface SkuInfoService extends IService<SkuInfo> {
-    @Override
-    boolean updateById(SkuInfo entity);
 
-    @Override
-    SkuInfo getById(Serializable id);
+    SkuInfoVO getVOById(Serializable id);
 
-    @Override
-    boolean removeById(Serializable id);
+    boolean updateById(SkuInfoDTO entity);
+
+    List<SkuInfoVO> list(Integer pageNum, Integer pageSize, Long catalogId, Long brandId, String key, BigDecimal minPrice, BigDecimal maxPrice);
 }

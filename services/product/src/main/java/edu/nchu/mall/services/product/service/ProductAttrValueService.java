@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.ProductAttrValue;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 public interface ProductAttrValueService extends IService<ProductAttrValue> {
     @Override
@@ -14,4 +15,7 @@ public interface ProductAttrValueService extends IService<ProductAttrValue> {
 
     @Override
     boolean removeById(Serializable id);
+
+    @Override
+    boolean saveBatch(Collection<ProductAttrValue> entityList);
 }

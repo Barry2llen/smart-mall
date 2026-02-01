@@ -4,9 +4,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import edu.nchu.mall.models.validation.Groups;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,11 +19,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("wms_purchase")
-@Schema(description = "采购信息")
+@Schema(description = "采购单信息")
 public class Purchase {
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "采购单id")
+    @Null(groups = Groups.Create.class)
+    @NotNull(groups = Groups.Update.class)
     private Long id;
 
     @TableField("assignee_id")

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "SpuBounds")
 @Slf4j
 @RestController
-@RequestMapping("/spu-boundss")
+@RequestMapping("/spu-bounds")
 public class SpuBoundsController {
 
     @Autowired

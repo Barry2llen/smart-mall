@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -50,10 +51,10 @@ public class SpuInfo {
     private Integer publishStatus;
 
     @TableField("create_time")
-    @Schema(description = "create_time")
-    private LocalDateTime createTime;
+    @Schema(description = "创建时间")
+    private Date createTime;
 
     @TableField("update_time")
-    @Schema(description = "update_time")
-    private LocalDateTime updateTime;
+    @Schema(description = "更新时间")
+    private Date updateTime;
 }

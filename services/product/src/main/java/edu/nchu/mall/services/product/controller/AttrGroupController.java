@@ -1,6 +1,6 @@
 package edu.nchu.mall.services.product.controller;
 
-import edu.nchu.mall.components.annotation.NotNullCollection;
+import edu.nchu.mall.models.annotation.NotNullCollection;
 import edu.nchu.mall.models.dto.AttrGroupDTO;
 import edu.nchu.mall.models.entity.AttrGroup;
 import edu.nchu.mall.models.model.R;

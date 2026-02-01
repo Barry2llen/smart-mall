@@ -1,4 +1,4 @@
-package edu.nchu.mall.components.feign;
+package edu.nchu.mall.components.feign.file;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;

@@ -40,5 +40,12 @@ spring:
             - Path=/member/**
           filters:
             - RewritePath=/member/?(?<segment>.*), /$\{segment}
+        - id: ware
+          uri:
+            lb://ware
+          predicates:
+            - Path=/ware/**
+          filters:
+            - RewritePath=/ware/?(?<segment>.*), /$\{segment}
 fronted:
   url: localhost
