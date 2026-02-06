@@ -1,9 +1,9 @@
-//PUT /product
+// PUT /product
 {
   "mappings": {
     "properties": {
       "skuId": {
-        "type": "long"
+        "type": "keyword"
       },
       "spuId": {
         "type": "keyword"
@@ -30,10 +30,10 @@
         "type": "long"
       },
       "brandId": {
-        "type": "long"
+        "type": "keyword"
       },
       "catalogId": {
-        "type": "long"
+        "type": "keyword"
       },
       "brandName": {
         "type": "keyword",
@@ -52,7 +52,7 @@
         "type": "nested",
         "properties": {
           "attrId": {
-            "type": "long"
+            "type": "keyword"
           },
           "attrName": {
             "type": "keyword",

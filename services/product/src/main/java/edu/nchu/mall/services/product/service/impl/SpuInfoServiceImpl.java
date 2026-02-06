@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.coupon.CouponFeignClient;
 import edu.nchu.mall.components.feign.search.SearchFeignClient;
 import edu.nchu.mall.components.feign.ware.WareFeignClient;
@@ -29,6 +30,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,7 +107,13 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
      */
     private boolean putOnSale(Long spuId) {
 
-        // TODO 检查spu是否有对应sku
+        // 检查spu是否有对应sku
+        List<SkuInfo> skus = getSkusBySpuId(spuId);
+        if (skus.isEmpty()) {
+            throw new CustomException("无法上架没有任何sku的商品", null, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        // TODO(接口幂等) 检查商品是否下架或新建
 
         // 拿到需要检索的属性
         List<ProductAttrValue> attrValues = productAttrValueService.list(new LambdaQueryWrapper<ProductAttrValue>().eq(ProductAttrValue::getSpuId, spuId));
@@ -121,7 +129,6 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
                     return esAttr;
                 }).toList();
 
-        List<SkuInfo> skus = getSkusBySpuId(spuId);
         List<EsProduct> esProducts = skus.stream().map(sku -> {
             EsProduct esProduct = new EsProduct();
             BeanUtils.copyProperties(sku, esProduct);
@@ -156,6 +163,18 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         return true;
     }
 
+    private boolean takenOffSale(Long spuId) {
+        List<SkuInfo> skus = getSkusBySpuId(spuId);
+        if (skus.isEmpty()) {
+            throw new CustomException("无法下架没有任何sku的商品", new IllegalArgumentException(), HttpStatus.BAD_REQUEST);
+        }
+
+        // TODO(接口幂等) 检查商品是否上架
+
+        return false;
+
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
@@ -172,6 +191,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
                 res = putOnSale(spuInfo.getId());
             } else if (spuInfo.getPublishStatus().equals(SpuStatus.DOWN.getCode())) {
                 // TODO 下架商品
+                res = takenOffSale(spuInfo.getId());
             }
         }
 

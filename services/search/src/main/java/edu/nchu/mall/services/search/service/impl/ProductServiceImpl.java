@@ -1,6 +1,5 @@
 package edu.nchu.mall.services.search.service.impl;
 
-import edu.nchu.mall.services.search.exception.EsOperationException;
 import edu.nchu.mall.services.search.document.Product;
 import edu.nchu.mall.services.search.repository.ProductRepository;
 import edu.nchu.mall.services.search.service.ProductService;
@@ -11,6 +10,7 @@ import java.util.Collection;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+
     @Autowired
     ProductRepository repository;
 
@@ -20,7 +20,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void saveAll(Collection<Product> products) {
+    public void saveAll(Iterable<Product> products) {
         repository.saveAll(products);
+    }
+
+    @Override
+    public void deleteById(String id) {
+        repository.deleteById(id);
+    }
+
+    @Override
+    public void deleteAll(Iterable<String> ids) {
+        repository.deleteAllById(ids);
     }
 }

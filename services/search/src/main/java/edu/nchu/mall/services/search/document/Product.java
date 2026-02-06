@@ -18,11 +18,11 @@ import java.util.List;
 public class Product {
 
     @Id
-    @Field(type = FieldType.Long)
-    private Long skuId;
+    @Field(type = FieldType.Keyword)
+    private String skuId;
 
     @Field(type = FieldType.Keyword)
-    private Long spuId;
+    private String spuId;
 
     @Field(type = FieldType.Text, analyzer = "ik_smart")
     private String skuTitle;
@@ -42,11 +42,11 @@ public class Product {
     @Field(type = FieldType.Long)
     private Long hotScore;
 
-    @Field(type = FieldType.Long)
-    private Long brandId;
+    @Field(type = FieldType.Keyword)
+    private String brandId;
 
-    @Field(type = FieldType.Long)
-    private Long catalogId;
+    @Field(type = FieldType.Keyword)
+    private String catalogId;
 
     @Field(type = FieldType.Keyword, index = false, docValues = false)
     private String brandName;
@@ -63,8 +63,8 @@ public class Product {
     @Data
     @NoArgsConstructor
     public static class Attr {
-        @Field(type = FieldType.Long)
-        private Long attrId;
+        @Field(type = FieldType.Keyword)
+        private String attrId;
 
         @Field(type = FieldType.Keyword, index = false, docValues = false)
         private String attrName;
