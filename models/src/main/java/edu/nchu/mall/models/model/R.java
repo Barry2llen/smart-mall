@@ -25,6 +25,10 @@ public class R<T>{
     @Schema(description = "数据")
     T data;
 
+    public static <T> R<T> success() {
+        return new R<>(RCT.SUCCESS, "success", null);
+    }
+
     public static <T> R<T> success(T data) {
         return new R<>(RCT.SUCCESS, "success", data);
     }

@@ -1,9 +1,11 @@
 package edu.nchu.mall.components.advice;
 
+import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,7 +29,10 @@ import java.util.stream.Collectors;
 @Hidden
 @RestControllerAdvice
 @Slf4j
-public class GlobalControllerAdvice {
+public class GlobalControllerAdvice{
+
+    @Value("${spring.application.name:unknown}")
+    String service;
 
     public record UnknowExceptionResponseMessage(Class<?> exceptionClass, String message) {}
 
@@ -119,5 +124,13 @@ public class GlobalControllerAdvice {
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<?> httpMessageNotReadableException(HttpMessageNotReadableException e){
         return new ResponseEntity<>(R.fail("json格式错误"), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * 自定义异常
+     */
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<R<?>> customException(CustomException e) {
+        return new ResponseEntity<>(R.fail(String.format("Service [%s]: %s", service, e.getMessage())), e.getCode());
     }
 }

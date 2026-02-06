@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.components.utils.KeyUtils;
 import edu.nchu.mall.models.entity.WareSku;
+import edu.nchu.mall.models.vo.SkuStockVO;
 import edu.nchu.mall.services.ware.dao.WareSkuMapper;
 import edu.nchu.mall.services.ware.service.WareSkuService;
 import org.springframework.aop.framework.AopContext;
@@ -24,6 +25,10 @@ import java.util.List;
 @CacheConfig(cacheNames = "wareSku")
 @Transactional
 public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> implements WareSkuService {
+
+    private Integer nullOr0(Integer i) {
+        return i == null ? 0 : i;
+    }
 
     @Override
     @Caching(evict = {
@@ -70,6 +75,11 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> impl
                 .eq(wareId.isPresent(), WareSku::getWareId, wareId.get())
                 .eq(skuId.isPresent(), WareSku::getSkuId, skuId.get());
         return super.list(page, qw);
+    }
+
+    @Override
+    public List<SkuStockVO> getStocksBySkuIds(List<Long> skuIds) {
+        return baseMapper.getStockBySkuIds(skuIds);
     }
 
     @Cacheable(cacheNames = "wareSku:list", key = "#pageNum + ':' + #pageSize")

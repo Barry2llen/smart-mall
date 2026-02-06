@@ -122,4 +122,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     public boolean save(Category entity) {
         return super.save(entity);
     }
+
+    @Override
+    public List<Category> seqByIds(List<Long> ids) {
+        Map<Long, Category> collect = super.listByIds(ids).stream().collect(Collectors.toMap(Category::getCatId, category -> category));
+        return ids.stream().map(collect::get).collect(Collectors.toList());
+    }
 }

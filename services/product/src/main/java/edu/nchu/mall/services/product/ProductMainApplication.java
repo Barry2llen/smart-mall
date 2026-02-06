@@ -12,7 +12,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
         scanBasePackageClasses = {ProductMainApplication.class}
 )
 @EnableFeignClients(
-        basePackages = {"edu.nchu.mall.components.feign.file", "edu.nchu.mall.components.feign.coupon"},
+        basePackages = {
+                "edu.nchu.mall.components.feign"
+        },
         basePackageClasses = {ProductMainApplication.class}
 )
 @EnableCaching

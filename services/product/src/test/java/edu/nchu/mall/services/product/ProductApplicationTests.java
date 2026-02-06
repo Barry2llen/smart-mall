@@ -1,9 +1,7 @@
 package edu.nchu.mall.services.product;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import edu.nchu.mall.models.entity.User;
 import edu.nchu.mall.services.product.service.UserService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;

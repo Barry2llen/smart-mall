@@ -18,6 +18,7 @@
         <module>ware</module>
         <module>file</module>
         <module>ruoyi</module>
+        <module>search</module>
     </modules>
 
     <dependencyManagement>

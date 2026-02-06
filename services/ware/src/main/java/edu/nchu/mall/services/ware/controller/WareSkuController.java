@@ -1,14 +1,17 @@
 package edu.nchu.mall.services.ware.controller;
 
+import edu.nchu.mall.models.annotation.NotNullCollection;
 import edu.nchu.mall.models.entity.WareSku;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.validation.Groups;
+import edu.nchu.mall.models.vo.SkuStockVO;
 import edu.nchu.mall.services.ware.service.WareSkuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
@@ -69,6 +72,16 @@ public class WareSkuController {
             return R.success(null);
         }
         return R.fail("delete failed");
+    }
+
+
+    @Parameters({
+            @Parameter(name = "skuIds", description = "要查询的skuId列表")
+    })
+    @Operation(summary = "获取sku库存数量")
+    @PostMapping("/stocks")
+    public R<List<SkuStockVO>> getStocksBySkuIds(@RequestBody @Valid @NotNullCollection List<Long> skuIds) {
+        return R.success(wareSkuService.getStocksBySkuIds(skuIds));
     }
 
     @Parameters({

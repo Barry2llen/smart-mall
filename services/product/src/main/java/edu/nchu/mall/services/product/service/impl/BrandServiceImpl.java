@@ -19,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "brand")
@@ -76,5 +79,11 @@ public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements
     @Cacheable(value = "brand:list", key = "#page.current + ':' + #page.size")
     public List<Brand> list(IPage<Brand> page){
         return super.list(page);
+    }
+
+    @Override
+    public List<Brand> seqByIds(Collection<Long> ids) {
+        Map<Long, Brand> collect = super.listByIds(ids).stream().collect(Collectors.toMap(Brand::getBrandId, brand -> brand));
+        return ids.stream().map(collect::get).toList();
     }
 }

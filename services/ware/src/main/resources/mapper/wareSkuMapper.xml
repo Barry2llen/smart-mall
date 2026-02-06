@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.nchu.mall.services.ware.dao.WareSkuMapper">
+    <!--  查询库存 -->
+    <select id="getStockBySkuIds" resultType="edu.nchu.mall.models.vo.SkuStockVO">
+        SELECT
+            sku_id AS skuId,
+            SUM(COALESCE(stock, 0)) AS stock,
+            SUM(COALESCE(stock_locked, 0)) AS stockLocked
+        FROM ware.wms_ware_sku
+        <where>
+            <if test="skuIds != null and skuIds.size() > 0">
+                sku_id IN
+                <foreach collection="skuIds" item="skuId" open="(" separator="," close=")">
+                    #{skuId}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY sku_id
+    </select>
+</mapper>

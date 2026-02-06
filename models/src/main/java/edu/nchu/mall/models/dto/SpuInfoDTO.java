@@ -29,7 +29,7 @@ public class SpuInfoDTO {
     @Schema(description = "weight")
     private BigDecimal weight;
 
-    @Schema(description = "上架状态[0 - 下架，1 - 上架]")
+    @Schema(description = "上架状态[0 - 新建，1 - 上架， 2 - 下架]")
     private Integer publishStatus;
 
     @Schema(description = "创建时间")

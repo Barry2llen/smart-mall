@@ -7,6 +7,10 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.components.feign.coupon.CouponFeignClient;
+import edu.nchu.mall.components.feign.search.SearchFeignClient;
+import edu.nchu.mall.components.feign.ware.WareFeignClient;
+import edu.nchu.mall.models.constants.SpuStatus;
+import edu.nchu.mall.models.document.EsProduct;
 import edu.nchu.mall.models.dto.BoundsDTO;
 import edu.nchu.mall.models.dto.SkuReductionDTO;
 import edu.nchu.mall.models.dto.SpuInfoDTO;
@@ -14,6 +18,7 @@ import edu.nchu.mall.models.dto.SpuSaveDTO;
 import edu.nchu.mall.models.entity.*;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.vo.SkuStockVO;
 import edu.nchu.mall.services.product.dao.*;
 import edu.nchu.mall.services.product.service.*;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -62,6 +67,18 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     @Autowired
     CouponFeignClient couponFeignClient;
 
+    @Autowired
+    BrandService brandService;
+
+    @Autowired
+    CategoryService categoryService;
+
+    @Autowired
+    WareFeignClient wareFeignClient;
+
+    @Autowired
+    SearchFeignClient searchFeignClient;
+
     private void checkResult(boolean res, String msg) {
         if (!res) {
             log.error("保存失败:" + msg);
@@ -76,6 +93,69 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         }
     }
 
+    private List<SkuInfo> getSkusBySpuId(Long spuId) {
+        if (spuId == null) return List.of();
+        return skuInfoMapper.selectList(new LambdaQueryWrapper<SkuInfo>().eq(SkuInfo::getSpuId, spuId));
+    }
+
+    /**
+     * 上架商品
+     * @param spuId spuId
+     * @return boolean
+     */
+    private boolean putOnSale(Long spuId) {
+
+        // TODO 检查spu是否有对应sku
+
+        // 拿到需要检索的属性
+        List<ProductAttrValue> attrValues = productAttrValueService.list(new LambdaQueryWrapper<ProductAttrValue>().eq(ProductAttrValue::getSpuId, spuId));
+        List<Long> attrIds = attrValues.stream().map(ProductAttrValue::getAttrId).toList();
+        if (attrIds.isEmpty()) attrIds = List.of(0L);
+        List<Long> searchAttrIds = attrService.list(new LambdaQueryWrapper<Attr>().eq(Attr::getAttrType, 1).in(Attr::getAttrId, attrIds)).stream().map(Attr::getAttrId).toList();
+        Set<Long> searchAttrIdSet = new HashSet<>(searchAttrIds);
+        List<EsProduct.Attr> esAttrs = attrValues.stream()
+                .filter(v -> searchAttrIdSet.contains(v.getAttrId()))
+                .map(attrValue -> {
+                    EsProduct.Attr esAttr = new EsProduct.Attr();
+                    BeanUtils.copyProperties(attrValue, esAttr);
+                    return esAttr;
+                }).toList();
+
+        List<SkuInfo> skus = getSkusBySpuId(spuId);
+        List<EsProduct> esProducts = skus.stream().map(sku -> {
+            EsProduct esProduct = new EsProduct();
+            BeanUtils.copyProperties(sku, esProduct);
+            esProduct.setSkuPrice(sku.getPrice());
+            esProduct.setSkuImg(sku.getSkuDefaultImg());
+            esProduct.setHotScore(0L);
+            esProduct.setAttrs(esAttrs);
+            return esProduct;
+        }).toList();
+
+        List<Brand> brands = brandService.seqByIds(esProducts.stream().map(EsProduct::getBrandId).toList());
+        List<String> brandNames = brands.stream().map(brand -> brand != null ? brand.getName() : null).toList();
+        List<String> brandImgs = brands.stream().map(brand -> brand != null ? brand.getLogo() : null).toList();
+        List<String> catalogNames = categoryService.seqByIds(esProducts.stream().map(EsProduct::getCatalogId).toList())
+                .stream().map(category -> category != null ? category.getName() : null).toList();
+
+        // 远程查询是否有库存
+        R<List<SkuStockVO>> stocksBySkuIds = wareFeignClient.getStocksBySkuIds(skus.stream().map(SkuInfo::getSkuId).toList());
+        checkResult(stocksBySkuIds, "远程查询库存失败");
+        Map<Long, Integer> collect = stocksBySkuIds.getData().stream().collect(Collectors.toMap(SkuStockVO::getSkuId, stock -> stock.getStock() - stock.getStockLocked()));
+
+        for (int i = 0; i < esProducts.size(); i++) {
+            esProducts.get(i).setBrandName(brandNames.get(i));
+            esProducts.get(i).setBrandImg(brandImgs.get(i));
+            esProducts.get(i).setCatalogName(catalogNames.get(i));
+            esProducts.get(i).setHasStock(collect.getOrDefault(esProducts.get(i).getSkuId(), 0) > 0);
+        }
+
+        // 保存到 Elasticsearch
+        R<?> r = searchFeignClient.saveProductAll(esProducts);
+        checkResult(r, "保存商品到es出错");
+        return true;
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
@@ -84,7 +164,18 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     public boolean updateById(SpuInfoDTO dto) {
         SpuInfo spuInfo = new SpuInfo();
         BeanUtils.copyProperties(dto, spuInfo);
-        return super.updateById(spuInfo);
+
+        boolean res = super.updateById(spuInfo);
+
+        if (res && spuInfo.getPublishStatus() != null) {
+            if (spuInfo.getPublishStatus().equals(SpuStatus.UP.getCode())) {
+                res = putOnSale(spuInfo.getId());
+            } else if (spuInfo.getPublishStatus().equals(SpuStatus.DOWN.getCode())) {
+                // TODO 下架商品
+            }
+        }
+
+        return res;
     }
 
     @Override
@@ -152,6 +243,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
                 Attr attr = attrService.getById(baseAttr.getAttrId());
                 if (attr != null) {
                     attrValue.setAttrName(attr.getAttrName());
+                    attrValue.setAttrValue(baseAttr.getAttrValues());
                 }
             }
             attrValue.setQuickShow(baseAttr.getShowDesc());
