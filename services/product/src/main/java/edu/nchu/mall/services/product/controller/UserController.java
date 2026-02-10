@@ -30,6 +30,11 @@ public class UserController {
     @Autowired
     UserService userService;
 
+    @GetMapping("/test")
+    public R<?> test() {
+        return new R<>(RCT.SUCCESS, "test", null);
+    }
+
     @Parameters(
             @Parameter(name = "id", description = "用户ID")
     )

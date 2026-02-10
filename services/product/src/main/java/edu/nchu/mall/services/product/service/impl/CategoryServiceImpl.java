@@ -2,17 +2,17 @@ package edu.nchu.mall.services.product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.entity.Category;
 import edu.nchu.mall.models.entity.CategoryBrandRelation;
-import edu.nchu.mall.models.vo.CategoryBrandRelationVO;
 import edu.nchu.mall.models.vo.CategoryVO;
 import edu.nchu.mall.services.product.dao.CategoryBrandRelationMapper;
 import edu.nchu.mall.services.product.dao.CategoryMapper;
 import edu.nchu.mall.services.product.service.CategoryBrandRelationService;
 import edu.nchu.mall.services.product.service.CategoryService;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -41,6 +41,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     @Autowired
     CategoryBrandRelationService categoryBrandRelationService;
 
+    @Autowired
+    RedissonClient redissonClient;
+
     @Override
     @Caching(
             evict = {@CacheEvict(key = "#entity.catId"), @CacheEvict(key = "'tree'")}
@@ -62,6 +65,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
                 brandIds.forEach(brandId -> categoryBrandRelationService.removeCacheByBrandId(brandId));
             }
         }
+        RLock test = redissonClient.getLock("test");
+        test.lock();
         return super.updateById(entity);
     }
 
@@ -78,9 +83,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
 
     @Override
-    @Cacheable(key = "'tree'")
+    @Cacheable(key = "'tree'", sync = true)
     public List<CategoryVO> listWithTree() {
 
+        List<Integer> list1 = "123".chars().mapToObj(Character::getNumericValue).toList();
         List<Category> list = baseMapper.selectList(null);
 
         Map<Long, CategoryVO> map = list.stream().map(entity -> {
