@@ -1,4 +1,5 @@
-// PUT /product
+// create index
+PUT /product
 {
   "mappings": {
     "properties": {
@@ -13,7 +14,8 @@
         "analyzer": "ik_smart"
       },
       "skuPrice": {
-        "type": "keyword"
+        "type": "scaled_float",
+        "scaling_factor": 100
       },
       "skuImg": {
         "type": "keyword",
@@ -36,17 +38,13 @@
         "type": "keyword"
       },
       "brandName": {
-        "type": "keyword",
-        "index": false,
-        "doc_values": false
+        "type": "keyword"
       },
       "brandImg": {
         "type": "keyword"
       },
       "catalogName": {
-        "type": "keyword",
-        "index": false,
-        "doc_values": false
+        "type": "keyword"
       },
       "attrs": {
         "type": "nested",
@@ -55,9 +53,7 @@
             "type": "keyword"
           },
           "attrName": {
-            "type": "keyword",
-            "index": false,
-            "doc_values": false
+            "type": "keyword"
           },
           "attrValue": {
             "type": "keyword"
@@ -65,5 +61,180 @@
         }
       }
     }
+  }
+}
+
+// query all
+GET /product/_search
+// query all response:
+{
+  "took": 0,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 4,
+      "relation": "eq"
+    },
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "product",
+        "_id": "2017525801620856834",
+        "_score": 1,
+        "_source": {
+          "_class": "edu.nchu.mall.services.search.document.Product",
+          "skuId": "2017525801620856834",
+          "spuId": "2017525800274485249",
+          "skuTitle": "iPhone Air 云白色 256G",
+          "skuPrice": 5999,
+          "skuImg": "https://barry2llen-smart-mall.oss-cn-guangzhou.aliyuncs.com/2026-01-31/5b1d3a02-64c6-4d6d-adc6-524cb464596e-b2fa4a25f1967835.jpg",
+          "saleCount": 0,
+          "hasStock": false,
+          "hotScore": 0,
+          "brandId": "2017505569879506946",
+          "catalogId": "225",
+          "brandName": "Apple",
+          "brandImg": "http://barry2llen-smart-mall.oss-cn-guangzhou.aliyuncs.com/2026-01-31/33f39dc9-f9f1-4d08-8d16-bcf5b3d382ed-apple.png",
+          "catalogName": "手机",
+          "attrs": [
+            {
+              "attrId": "2017507051374788609",
+              "attrName": "机身重量",
+              "attrValue": "165g"
+            },
+            {
+              "attrId": "2017506484590100481",
+              "attrName": "机型",
+              "attrValue": "iPhone Air"
+            },
+            {
+              "attrId": "2017506593772027905",
+              "attrName": "入网型号",
+              "attrValue": "A180"
+            }
+          ]
+        }
+      },
+      {
+        "_index": "product",
+        "_id": "2017525801763463170",
+        "_score": 1,
+        "_source": {
+          "_class": "edu.nchu.mall.services.search.document.Product",
+          "skuId": "2017525801763463170",
+          "spuId": "2017525800274485249",
+          "skuTitle": "iPhone Air 云白色 512G",
+          "skuPrice": 8999,
+          "skuImg": "",
+          "saleCount": 0,
+          "hasStock": false,
+          "hotScore": 0,
+          "brandId": "2017505569879506946",
+          "catalogId": "225",
+          "brandName": "Apple",
+          "brandImg": "http://barry2llen-smart-mall.oss-cn-guangzhou.aliyuncs.com/2026-01-31/33f39dc9-f9f1-4d08-8d16-bcf5b3d382ed-apple.png",
+          "catalogName": "手机",
+          "attrs": [
+            {
+              "attrId": "2017507051374788609",
+              "attrName": "机身重量",
+              "attrValue": "165g"
+            },
+            {
+              "attrId": "2017506484590100481",
+              "attrName": "机型",
+              "attrValue": "iPhone Air"
+            },
+            {
+              "attrId": "2017506593772027905",
+              "attrName": "入网型号",
+              "attrValue": "A180"
+            }
+          ]
+        }
+      },
+      {
+        "_index": "product",
+        "_id": "2017525801834766337",
+        "_score": 1,
+        "_source": {
+          "_class": "edu.nchu.mall.services.search.document.Product",
+          "skuId": "2017525801834766337",
+          "spuId": "2017525800274485249",
+          "skuTitle": "iPhone Air 深空黑 256G",
+          "skuPrice": 5999,
+          "skuImg": "",
+          "saleCount": 0,
+          "hasStock": false,
+          "hotScore": 0,
+          "brandId": "2017505569879506946",
+          "catalogId": "225",
+          "brandName": "Apple",
+          "brandImg": "http://barry2llen-smart-mall.oss-cn-guangzhou.aliyuncs.com/2026-01-31/33f39dc9-f9f1-4d08-8d16-bcf5b3d382ed-apple.png",
+          "catalogName": "手机",
+          "attrs": [
+            {
+              "attrId": "2017507051374788609",
+              "attrName": "机身重量",
+              "attrValue": "165g"
+            },
+            {
+              "attrId": "2017506484590100481",
+              "attrName": "机型",
+              "attrValue": "iPhone Air"
+            },
+            {
+              "attrId": "2017506593772027905",
+              "attrName": "入网型号",
+              "attrValue": "A180"
+            }
+          ]
+        }
+      },
+      {
+        "_index": "product",
+        "_id": "2017525801834766340",
+        "_score": 1,
+        "_source": {
+          "_class": "edu.nchu.mall.services.search.document.Product",
+          "skuId": "2017525801834766340",
+          "spuId": "2017525800274485249",
+          "skuTitle": "iPhone Air 深空黑 512G",
+          "skuPrice": 8999,
+          "skuImg": "",
+          "saleCount": 0,
+          "hasStock": true,
+          "hotScore": 0,
+          "brandId": "2017505569879506946",
+          "catalogId": "225",
+          "brandName": "Apple",
+          "brandImg": "http://barry2llen-smart-mall.oss-cn-guangzhou.aliyuncs.com/2026-01-31/33f39dc9-f9f1-4d08-8d16-bcf5b3d382ed-apple.png",
+          "catalogName": "手机",
+          "attrs": [
+            {
+              "attrId": "2017507051374788609",
+              "attrName": "机身重量",
+              "attrValue": "165g"
+            },
+            {
+              "attrId": "2017506484590100481",
+              "attrName": "机型",
+              "attrValue": "iPhone Air"
+            },
+            {
+              "attrId": "2017506593772027905",
+              "attrName": "入网型号",
+              "attrValue": "A180"
+            }
+          ]
+        }
+      }
+    ]
   }
 }

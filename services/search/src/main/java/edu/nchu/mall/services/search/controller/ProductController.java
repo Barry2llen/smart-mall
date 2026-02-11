@@ -4,6 +4,8 @@ package edu.nchu.mall.services.search.controller;
 import edu.nchu.mall.models.annotation.NotNullCollection;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.services.search.document.Product;
+import edu.nchu.mall.services.search.dto.ProductSearchParam;
+import edu.nchu.mall.services.search.dto.ProductSearchResult;
 import edu.nchu.mall.services.search.exception.EsOperationException;
 import edu.nchu.mall.services.search.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,5 +54,15 @@ public class ProductController {
             throw new EsOperationException("保存商品异常", e);
         }
         return R.success();
+    }
+
+    @Parameters({
+            @Parameter(name = "param", description = "搜索参数")
+    })
+    @Operation(summary = "搜索商品")
+    @PostMapping("/search")
+    public R<ProductSearchResult> search(@RequestBody @Valid ProductSearchParam param) {
+        ProductSearchResult result = productService.search(param);
+        return R.success(result);
     }
 }

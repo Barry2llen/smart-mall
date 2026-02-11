@@ -111,11 +111,11 @@ public class GlobalControllerAdvice{
     }
 
     /**
-     * 非法id：Long.valueOf转换时出错
+     * 非法id：String转Number转换时出错
      */
     @ExceptionHandler(NumberFormatException.class)
     public ResponseEntity<R<?>> numberFormatException(NumberFormatException e){
-        return new ResponseEntity<>(R.fail("id错误"), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(R.fail("数值错误"), HttpStatus.BAD_REQUEST);
     }
 
     /**

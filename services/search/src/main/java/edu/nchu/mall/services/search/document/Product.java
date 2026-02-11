@@ -27,7 +27,7 @@ public class Product {
     @Field(type = FieldType.Text, analyzer = "ik_smart")
     private String skuTitle;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Scaled_Float)
     private BigDecimal skuPrice;
 
     @Field(type = FieldType.Keyword, index = false, docValues = false)
