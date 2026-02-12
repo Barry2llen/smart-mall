@@ -1,0 +1,63 @@
+{
+  "brand_agg": {
+    "terms": {
+      "field": "brandId",
+      "size": 10
+    },
+    "aggs": {
+      "brandName_agg": {
+        "terms": {
+          "field": "brandName",
+          "size": 1
+        }
+      },
+      "brandImg_agg": {
+        "terms": {
+          "field": "brandImg",
+          "size": 1
+        }
+      }
+    }
+  },
+  "catalog_agg": {
+    "terms": {
+      "field": "catalogId",
+      "size": 10
+    },
+    "aggs": {
+      "catalogName_agg": {
+        "terms": {
+          "field": "catalogName",
+          "size": 1
+        }
+      }
+    }
+  },
+  "attr_agg": {
+    "nested": {
+      "path": "attrs"
+    },
+    "aggs": {
+      "attrId_agg": {
+        "terms": {
+          "field": "attrs.attrId",
+          "size": 10
+        },
+        "aggs": {
+          "attrName_agg": {
+            "terms": {
+              "field": "attrs.attrName",
+              "size": 20
+            }
+          },
+          "attrValue_agg": {
+            "terms": {
+              "field": "attrs.attrValue",
+              "size": 20
+            }
+          }
+        }
+      }
+    }
+  }
+}

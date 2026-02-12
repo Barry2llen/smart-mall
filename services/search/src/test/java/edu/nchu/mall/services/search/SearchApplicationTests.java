@@ -1,7 +1,11 @@
 package edu.nchu.mall.services.search;
 
+import edu.nchu.mall.components.exception.CustomException;
+import edu.nchu.mall.services.search.document.Product;
 import edu.nchu.mall.services.search.document.User;
+import edu.nchu.mall.services.search.dto.ProductSearchParam;
 import edu.nchu.mall.services.search.service.UserService;
+import edu.nchu.mall.services.search.utils.QueryUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +16,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.http.HttpStatus;
 
 @Slf4j
 @SpringBootTest
@@ -39,13 +44,34 @@ public class SearchApplicationTests {
 
     @Test
     void testQuery() {
-        Criteria criteria = Criteria.where("name").contains("张三").or().subCriteria(
+        Criteria.where("name").contains("张三");
+        Criteria criteria = Criteria.or().subCriteria(
                 Criteria.where("age").is(18)
         );
         Query query = new CriteriaQuery(criteria);
         SearchHits<User> reslut = elasticsearchOperations.search(query, User.class);
         log.warn("Searched {} elements:", reslut.getTotalHits());
         for (SearchHit<User> hit : reslut) {
+            log.warn("Element id {} : {}", hit.getId(), hit.getContent());
+        }
+    }
+
+
+    @Test
+    void testProductQuery() {
+        ProductSearchParam param = new ProductSearchParam();
+        param.setKeyword("iPhone");
+
+        Query query = null;
+        QueryUtils.ProductQuery productQuery = new QueryUtils.ProductQuery();
+        try{
+            query = productQuery.buildQuery(param);
+        }catch (Exception e){
+            throw new CustomException("封装商品查询请求失败", e, HttpStatus.BAD_REQUEST);
+        }
+
+        SearchHits<Product> result = elasticsearchOperations.search(query, Product.class);
+        for (SearchHit<Product> hit : result) {
             log.warn("Element id {} : {}", hit.getId(), hit.getContent());
         }
     }

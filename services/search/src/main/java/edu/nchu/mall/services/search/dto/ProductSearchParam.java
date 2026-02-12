@@ -17,7 +17,7 @@ public class ProductSearchParam {
     private Long catalogId;
 
     @Schema(description = "排序规则")
-    private String sort;
+    private List<String> sort;
 
     @Schema(description = "是否有货")
     private Integer hasStock;
@@ -28,9 +28,12 @@ public class ProductSearchParam {
     @Schema(description = "品牌ID")
     private List<Long> brandIds;
 
-    @Schema(description = "属性(attr1Id_attrValue1 & attr1Id_attrValue2 & attr2Id_attrValue3 & ...)")
+    @Schema(description = "属性")
     private List<String> attrs;
 
     @Schema(description = "页码")
     private Integer pageNum;
+
+    @Schema(description = "页大小")
+    private Integer pageSize;
 }
