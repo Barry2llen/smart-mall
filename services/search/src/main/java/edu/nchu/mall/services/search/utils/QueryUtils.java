@@ -3,6 +3,7 @@ package edu.nchu.mall.services.search.utils;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.SortOptionsBuilders;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
@@ -33,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 import jakarta.json.stream.JsonParser;
 
@@ -48,13 +48,24 @@ public class QueryUtils {
         public static final int DEFAULT_PAGE_NUM = 0;
         public static final String DEFAULT_HIGHLIGHT_PRE_TAG = "<b style='color:red;'>";
         public static final String DEFAULT_HIGHLIGHT_POST_TAG = "</b>";
+        public static final String BRAND_AGG = "brand_agg";
+        public static final String BRAND_NAME_AGG = "brandName_agg";
+        public static final String BRAND_IMG_AGG = "brandImg_agg";
+        public static final String CATALOG_AGG = "catalog_agg";
+        public static final String CATALOG_NAME_AGG = "catalogName_agg";
+        public static final String ATTR_AGG = "attr_agg";
+        public static final String ATTR_ID_AGG = "attrId_agg";
+        public static final String ATTR_NAME_AGG = "attrName_agg";
+        public static final String ATTR_VALUE_AGG = "attrValue_agg";
         private static final List<Entry<String, Aggregation>> AGGREGATIONS;
 
         static {
             try {
                 ClassPathResource resource = new ClassPathResource("dsl/search/product.agg.json");
-                byte[] bytes = Files.readAllBytes(resource.getFile().toPath());
-                String agg_json = new String(bytes, StandardCharsets.UTF_8);
+                String agg_json;
+                try (var inputStream = resource.getInputStream()) {
+                    agg_json = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                }
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(agg_json);
@@ -110,12 +121,18 @@ public class QueryUtils {
             }
 
             if (param.getCatalogId() != null) {
-                boolQueryBuilder.filter(q -> q.term(t -> t.field("catalogId").value(param.getCatalogId())));
+                boolQueryBuilder.filter(q -> q.term(t -> t.field("catalogId").value(String.valueOf(param.getCatalogId()))));
             }
 
             if (param.getBrandIds() != null && !param.getBrandIds().isEmpty()) {
-                String json = String.format("{\"brandId\":%s}", param.getBrandIds());
-                boolQueryBuilder.filter(q -> q.terms(t -> t.withJson(new StringReader(json))));
+                List<FieldValue> brandValues = param.getBrandIds().stream()
+                        .map(String::valueOf)
+                        .map(FieldValue::of)
+                        .toList();
+                boolQueryBuilder.filter(q -> q.terms(t -> t
+                        .field("brandId")
+                        .terms(v -> v.value(brandValues))
+                ));
             }
 
             // attrs=1_5寸:8寸&attrs=2_16G:4GB
@@ -138,9 +155,7 @@ public class QueryUtils {
                     var term = QueryBuilders
                             .term(t -> t.field("attrs.attrId").value(entry.getKey().toString()));
                     var terms = QueryBuilders
-                            .terms(t -> t.withJson(
-                                    new StringReader(String.format("{\"attrs.attrValue\":%s}", entry.getValue()))
-                            ));
+                            .terms(t -> t.field("attrs.attrValue").terms(v -> v.value(entry.getValue().stream().map(FieldValue::of).toList())));
                     return QueryBuilders.bool(b -> b.must(term, terms));
                 }).toList();
 
@@ -152,18 +167,31 @@ public class QueryUtils {
             }
 
             if (param.getSkuPrice() != null && !param.getSkuPrice().trim().isEmpty()) {
-                List<BigDecimal> prices = Arrays.stream(param.getSkuPrice().split("_"))
-                        .filter(s -> !s.isBlank() && s.matches("^\\d+(\\.\\d+)?$"))
-                        .map(BigDecimal::new)
-                        .toList();
+                String[] parts = param.getSkuPrice().split("_", -1);
+                BigDecimal minPrice = null;
+                BigDecimal maxPrice = null;
+                if (parts.length > 0) {
+                    String left = parts[0].trim();
+                    if (!left.isEmpty() && left.matches("^\\d+(\\.\\d+)?$")) {
+                        minPrice = new BigDecimal(left);
+                    }
+                }
+                if (parts.length > 1) {
+                    String right = parts[1].trim();
+                    if (!right.isEmpty() && right.matches("^\\d+(\\.\\d+)?$")) {
+                        maxPrice = new BigDecimal(right);
+                    }
+                }
                 RangeQuery.Builder rangeQueryBuilder = new RangeQuery.Builder().field("skuPrice");
-                if (!prices.isEmpty()) {
-                    rangeQueryBuilder.gte(JsonData.of(prices.get(0)));
+                if (minPrice != null) {
+                    rangeQueryBuilder.gte(JsonData.of(minPrice));
                 }
-                if (prices.size() > 1) {
-                    rangeQueryBuilder.lte(JsonData.of(prices.get(1)));
+                if (maxPrice != null) {
+                    rangeQueryBuilder.lte(JsonData.of(maxPrice));
                 }
-                boolQueryBuilder.filter(q -> q.range(rangeQueryBuilder.build()));
+                if (minPrice != null || maxPrice != null) {
+                    boolQueryBuilder.filter(q -> q.range(rangeQueryBuilder.build()));
+                }
             }
 
             // sort, from, size, aggs

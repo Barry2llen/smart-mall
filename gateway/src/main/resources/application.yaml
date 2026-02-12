@@ -47,5 +47,12 @@ spring:
             - Path=/ware/**
           filters:
             - RewritePath=/ware/?(?<segment>.*), /$\{segment}
+        - id: search
+          uri:
+            lb://search
+          predicates:
+            - Path=/search/**
+          filters:
+            - RewritePath=/search/?(?<segment>.*), /$\{segment}
 fronted:
   url: localhost

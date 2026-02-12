@@ -4,6 +4,8 @@ import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.services.search.document.Product;
 import edu.nchu.mall.services.search.document.User;
 import edu.nchu.mall.services.search.dto.ProductSearchParam;
+import edu.nchu.mall.services.search.dto.ProductSearchResult;
+import edu.nchu.mall.services.search.service.ProductService;
 import edu.nchu.mall.services.search.service.UserService;
 import edu.nchu.mall.services.search.utils.QueryUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,8 @@ import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
+
 @Slf4j
 @SpringBootTest
 public class SearchApplicationTests {
@@ -28,7 +32,10 @@ public class SearchApplicationTests {
     @Autowired
     UserService userService;
 
-    @Test
+    @Autowired
+    ProductService productService;
+
+    //@Test
     void testSaveUser() {
         User user = new User();
         user.setName("张三");
@@ -42,7 +49,7 @@ public class SearchApplicationTests {
         log.info("保存用户结果：{}", res);
     }
 
-    @Test
+    //@Test
     void testQuery() {
         Criteria.where("name").contains("张三");
         Criteria criteria = Criteria.or().subCriteria(
@@ -61,6 +68,11 @@ public class SearchApplicationTests {
     void testProductQuery() {
         ProductSearchParam param = new ProductSearchParam();
         param.setKeyword("iPhone");
+//        param.setHasStock(1);
+        param.setCatalogId(225L);
+        //param.setBrandIds(List.of(1L));
+//        param.setAttrs(List.of("2017506484590100481_iPhone 17"));
+        param.setSkuPrice("6000_10000");
 
         Query query = null;
         QueryUtils.ProductQuery productQuery = new QueryUtils.ProductQuery();
@@ -75,4 +87,27 @@ public class SearchApplicationTests {
             log.warn("Element id {} : {}", hit.getId(), hit.getContent());
         }
     }
+
+    @Test
+    void testProductService() {
+        ProductSearchParam param = new ProductSearchParam();
+        param.setKeyword("iPhone");
+        param.setHasStock(0);
+        param.setCatalogId(225L);
+        param.setAttrs(List.of("2017506484590100481_iPhone Air:iPhone 17"));
+        param.setSkuPrice("_6000");
+
+        Query query = null;
+        QueryUtils.ProductQuery productQuery = new QueryUtils.ProductQuery();
+        try{
+            query = productQuery.buildQuery(param);
+        }catch (Exception e){
+            throw new CustomException("封装商品查询请求失败", e, HttpStatus.BAD_REQUEST);
+        }
+
+        ProductSearchResult result = productService.search(param);
+        log.warn("Search hits: {}", result.getTotal());
+        log.warn("Search response: {}", result);
+    }
+
 }
