@@ -32,7 +32,7 @@ public class UserController {
 
     @GetMapping("/test")
     public R<?> test() {
-        return new R<>(RCT.SUCCESS, "test", null);
+        return new R<>(RCT.SUCCESS, Thread.currentThread().toString(), null);
     }
 
     @Parameters(
