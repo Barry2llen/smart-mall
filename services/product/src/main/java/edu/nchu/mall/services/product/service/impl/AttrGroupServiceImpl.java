@@ -10,6 +10,7 @@ import edu.nchu.mall.models.entity.AttrAttrgroupRelation;
 import edu.nchu.mall.models.entity.AttrGroup;
 import edu.nchu.mall.models.vo.AttrGroupVO;
 import edu.nchu.mall.models.vo.AttrGroupWithAttrVO;
+import edu.nchu.mall.models.vo.SkuItemVO;
 import edu.nchu.mall.services.product.dao.AttrAttrgroupRelationMapper;
 import edu.nchu.mall.services.product.dao.AttrGroupMapper;
 import edu.nchu.mall.services.product.dao.AttrMapper;
@@ -163,10 +164,10 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
     }
 
     @Override
-    @Cacheable(cacheNames = "attrGroup:byCatelog", key = "#catelogId")
-    public List<AttrGroupVO> getAttrGroupByCatelogId(long catelogId) {
+    @Cacheable(cacheNames = "attrGroup:byCatalog", key = "#catalogId")
+    public List<AttrGroupVO> getAttrGroupByCatalogId(long catalogId) {
         LambdaQueryWrapper<AttrGroup> qw = Wrappers.lambdaQuery();
-        qw.eq(AttrGroup::getCatelogId, catelogId);
+        qw.eq(AttrGroup::getCatelogId, catalogId);
         List<AttrGroup> attrGroups = super.list(qw);
         return attrGroups.stream()
                 .map(attrGroup -> {
@@ -177,10 +178,10 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
     }
 
     @Override
-    @Cacheable(cacheNames = "attrGroup:attrsInGroupByCatelog", key = "#catelogId")
-    public List<AttrGroupWithAttrVO> listAttrInGroupByCatelogId(long catelogId) {
+    @Cacheable(cacheNames = "attrGroup:attrsInGroupByCatalog", key = "#catalogId")
+    public List<AttrGroupWithAttrVO> listAttrInGroupByCatalogId(long catalogId) {
         LambdaQueryWrapper<AttrGroup> qw = Wrappers.lambdaQuery();
-        qw.eq(AttrGroup::getCatelogId, catelogId);
+        qw.eq(AttrGroup::getCatelogId, catalogId);
         return super.list(qw).stream().map(entity -> {
             AttrGroupWithAttrVO vo = new AttrGroupWithAttrVO();
             vo.setAttrs(List.of());

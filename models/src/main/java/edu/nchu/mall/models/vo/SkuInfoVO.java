@@ -16,6 +16,12 @@ public class SkuInfoVO {
     @Schema(description = "skuId")
     private Long skuId;
 
+    @Schema(description = "spuId")
+    private Long spuId;
+
+    @Schema(description = "所属分类id")
+    private Long catalogId;
+
     @Schema(description = "sku名称")
     private String skuName;
 

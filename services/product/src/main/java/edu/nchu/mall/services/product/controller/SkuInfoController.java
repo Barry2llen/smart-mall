@@ -5,6 +5,7 @@ import edu.nchu.mall.models.entity.SkuInfo;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.vo.SkuInfoVO;
+import edu.nchu.mall.models.vo.SkuItemVO;
 import edu.nchu.mall.services.product.service.SkuInfoService;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -68,5 +69,13 @@ public class SkuInfoController {
                                           @RequestParam(required = false) BigDecimal minPrice,
                                           @RequestParam(required = false) BigDecimal maxPrice) {
         return R.success(skuInfoService.list(pageNum, pageSize, catalogId, brandId, key, minPrice, maxPrice));
+    }
+
+    @Parameters(@Parameter(name = "sid", description = "Sku主键"))
+    @Operation(summary = "获取商品详情")
+    @GetMapping("/item/{sid}")
+    public R<SkuItemVO> getSkuItem(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
+        SkuItemVO data = skuInfoService.getSkuItem(Long.parseLong(sid));
+        return new R<>(RCT.SUCCESS, "success", data);
     }
 }

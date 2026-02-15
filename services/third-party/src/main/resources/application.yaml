@@ -1,0 +1,28 @@
+server:
+  port: 9100
+spring:
+  application:
+    name: third-party
+  config:
+    import:
+      - nacos:commons-redis?group=commons
+      - nacos:commons?group=commons
+      - nacos:commons-mail?group=commons
+  cloud:
+    nacos:
+      config:
+        namespace: dev
+        file-extension: yaml
+      server-addr: 127.0.0.1:8848
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: edu.nchu.mall.services.third-party.controller
+

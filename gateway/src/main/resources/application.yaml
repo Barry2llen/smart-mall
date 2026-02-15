@@ -57,5 +57,12 @@ spring:
             - Path=/search/**
           filters:
             - RewritePath=/search/?(?<segment>.*), /$\{segment}
+        - id: auth
+          uri:
+            lb://auth
+          predicates:
+            - Path=/auth/**
+          filters:
+            - RewritePath=/auth/?(?<segment>.*), /$\{segment}
 fronted:
   url: localhost

@@ -212,7 +212,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
         relation.setAttrId(attrId);
         relation.setAttrGroupId(attrGroupId);
 
-        // 更新catlogId
+        // 更新catalogId
         AttrGroup attrGroup = attrGroupMapper.selectById(attrGroupId);
         if (attrGroup == null) return false;
 

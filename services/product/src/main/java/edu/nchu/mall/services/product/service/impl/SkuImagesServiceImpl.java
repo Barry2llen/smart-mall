@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.product.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.entity.SkuImages;
 import edu.nchu.mall.services.product.dao.SkuImagesMapper;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "skuImages")
@@ -39,5 +41,10 @@ public class SkuImagesServiceImpl extends ServiceImpl<SkuImagesMapper, SkuImages
     @Override
     public boolean saveBatch(Collection<SkuImages> entities) {
         return entities.isEmpty() || super.saveBatch(entities);
+    }
+
+    @Override
+    public List<SkuImages> getImagesBySkuId(Long skuId) {
+        return baseMapper.selectList(Wrappers.<SkuImages>lambdaQuery().eq(SkuImages::getSkuId, skuId));
     }
 }

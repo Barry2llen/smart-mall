@@ -19,6 +19,8 @@
         <module>file</module>
         <module>ruoyi</module>
         <module>search</module>
+        <module>auth</module>
+        <module>third-party</module>
     </modules>
 
     <dependencyManagement>

@@ -37,7 +37,7 @@ public class AttrGroupController {
     @Operation(summary = "根据分类id获取属性分组及其关联的属性")
     @GetMapping("/by-catelog/{sid}")
     public R<List<AttrGroupVO>> getAttrGroupByCatelogId(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
-        List<AttrGroupVO> data = attrGroupService.getAttrGroupByCatelogId(Long.parseLong(sid));
+        List<AttrGroupVO> data = attrGroupService.getAttrGroupByCatalogId(Long.parseLong(sid));
         return new R<>(RCT.SUCCESS, "success", data);
     }
 
@@ -117,6 +117,6 @@ public class AttrGroupController {
     @GetMapping("/with-attr/by-catelog/{sid}")
     @Operation(summary = "根据分类id获取属性分组及其关联的属性")
     public R<List<AttrGroupWithAttrVO>> listAttrInGroupByCatelogId(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
-        return R.success(attrGroupService.listAttrInGroupByCatelogId(Long.parseLong(sid)));
+        return R.success(attrGroupService.listAttrInGroupByCatalogId(Long.parseLong(sid)));
     }
 }
