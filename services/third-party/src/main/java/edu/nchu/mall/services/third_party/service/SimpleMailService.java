@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-public interface SimpleMailService extends AsyncValidationService<SimpleMailService.MailMessage, SimpleMailService.Validation, Void, Boolean>{
+public interface SimpleMailService extends AsyncValidationService<SimpleMailService.MailMessage, SimpleMailService.Validation, Boolean, Boolean>{
 
     @Data
     @NoArgsConstructor
