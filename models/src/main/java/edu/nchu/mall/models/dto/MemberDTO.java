@@ -2,6 +2,7 @@ package edu.nchu.mall.models.dto;
 
 import edu.nchu.mall.models.validation.Groups;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import lombok.AllArgsConstructor;
@@ -26,9 +27,11 @@ public class MemberDTO {
     private Long levelId;
 
     @Schema(description = "用户名")
+    @NotBlank
     private String username;
     
     @Schema(description = "密码")
+    @NotBlank
     private String password;
 
     @Schema(description = "昵称")

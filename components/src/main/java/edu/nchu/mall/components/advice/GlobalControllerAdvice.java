@@ -133,6 +133,6 @@ public class GlobalControllerAdvice{
     public ResponseEntity<R<?>> customException(CustomException e) {
         var msg = String.format("Service [%s]: %s", service, e.getMessage());
         log.info(msg);
-        return new ResponseEntity<>(R.fail(e.getMessage()), e.getCode());
+        return new ResponseEntity<>(e.getResponse() == null ? R.fail(e.getMessage()) : e.getResponse(), e.getCode());
     }
 }

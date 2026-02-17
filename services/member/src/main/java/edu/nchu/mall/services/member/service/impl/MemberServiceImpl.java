@@ -1,18 +1,25 @@
 package edu.nchu.mall.services.member.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.models.dto.MemberDTO;
 import edu.nchu.mall.models.entity.Member;
+import edu.nchu.mall.models.entity.MemberLevel;
+import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.vo.MemberVO;
+import edu.nchu.mall.services.member.dao.MemberLevelMapper;
 import edu.nchu.mall.services.member.dao.MemberMapper;
 import edu.nchu.mall.services.member.service.MemberService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +30,9 @@ import java.util.List;
 @CacheConfig(cacheNames = "member")
 @Transactional
 public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> implements MemberService {
+
+    @Autowired
+    MemberLevelMapper memberLevelMapper;
 
     @Override
     @Caching(evict = {
@@ -59,8 +69,29 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
             @CacheEvict(key = "'list'")
     })
     public boolean save(MemberDTO dto) {
+        if (dto.getUsername() != null) {
+            boolean exists = baseMapper.exists(Wrappers.<Member>lambdaQuery().eq(Member::getUsername, dto.getUsername()));
+            if (!exists) throw new CustomException("用户名已被使用", null, HttpStatus.CONFLICT);
+        }
+
+        if (dto.getEmail() != null) {
+            boolean exists = baseMapper.exists(Wrappers.<Member>lambdaQuery().eq(Member::getEmail, dto.getEmail()));
+            if (!exists) throw new CustomException("邮箱已存在", null, HttpStatus.CONFLICT);
+        }
+
+        if (dto.getMobile() != null) {
+            boolean exists = baseMapper.exists(Wrappers.<Member>lambdaQuery().eq(Member::getMobile, dto.getMobile()));
+            if (!exists) throw new CustomException("手机号已存在", null, HttpStatus.CONFLICT);
+        }
+
         Member entity = new Member();
         BeanUtils.copyProperties(dto, entity);
+
+        if (dto.getLevelId() == null) {
+            MemberLevel memberLevel = memberLevelMapper.selectOne(Wrappers.<MemberLevel>lambdaQuery().eq(MemberLevel::getDefaultStatus, 1));
+            entity.setLevelId(memberLevel == null ? null : memberLevel.getId());
+        }
+
         return super.save(entity);
     }
 
