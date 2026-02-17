@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.member.controller;
 
+import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.models.dto.MemberDTO;
 import edu.nchu.mall.models.entity.Member;
 import edu.nchu.mall.models.model.R;
@@ -11,7 +12,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -56,11 +59,12 @@ public class MemberController {
     @Operation(summary = "创建会员")
     @PostMapping
     public R<?> createMember(@RequestBody @Validated(Groups.Create.class) MemberDTO dto) {
-        boolean res = memberService.save(dto);
-        if (res) {
-            return R.success(null);
+        try{
+            boolean res = memberService.save(dto);
+            return res ? R.success(null) : R.fail("create failed");
+        } catch (CustomException e) {
+            return R.fail(e.getMessage());
         }
-        return R.fail("create failed");
     }
 
     @Parameters(@Parameter(name = "sid", description = "会员主键"))
@@ -80,8 +84,15 @@ public class MemberController {
     })
     @Operation(summary = "获取会员列表")
     @GetMapping
-    public R<List<MemberVO>> list(@RequestParam @Valid @NotNull Integer pageNum,
-                                  @RequestParam @Valid @NotNull Integer pageSize) {
+    public R<List<MemberVO>> list(@RequestParam @NotNull Integer pageNum,
+                                  @RequestParam @NotNull Integer pageSize) {
         return R.success(memberService.getMembers(pageNum, pageSize));
+    }
+
+    @Parameters(@Parameter(name = "key", description = "用户的用户名或邮箱又或电话号码"))
+    @Operation(summary = "获取加盐后的密码")
+    @GetMapping("/salt")
+    public @Nullable String getSaltedPassword(@RequestParam @NotBlank String key) {
+        return memberService.getSaltedPassword(key);
     }
 }

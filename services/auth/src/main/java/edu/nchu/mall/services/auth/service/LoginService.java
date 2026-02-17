@@ -10,7 +10,5 @@ public interface LoginService {
         return false;
     }
 
-    default boolean login(String username, String password) {
-        return false;
-    }
+    boolean login(String username, String password);
 }

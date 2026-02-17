@@ -71,7 +71,7 @@ public class ASimpleMailService implements SimpleMailService {
 
             if (!retryable(mailMessage)) {
                 log.info("用户{}的请求过于频繁", mailMessage.getTo());
-                throw new CustomException("请求过于频繁");
+                return CompletableFuture.completedFuture(succeeded);
             }
 
             // 1. 创建 Thymeleaf 上下文对象，用于存放变量

@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.member.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,7 +9,6 @@ import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.models.dto.MemberDTO;
 import edu.nchu.mall.models.entity.Member;
 import edu.nchu.mall.models.entity.MemberLevel;
-import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.vo.MemberVO;
 import edu.nchu.mall.services.member.dao.MemberLevelMapper;
 import edu.nchu.mall.services.member.dao.MemberMapper;
@@ -71,17 +71,17 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     public boolean save(MemberDTO dto) {
         if (dto.getUsername() != null) {
             boolean exists = baseMapper.exists(Wrappers.<Member>lambdaQuery().eq(Member::getUsername, dto.getUsername()));
-            if (!exists) throw new CustomException("用户名已被使用", null, HttpStatus.CONFLICT);
+            if (exists) throw new CustomException("用户名已被使用", null, HttpStatus.NO_CONTENT);
         }
 
         if (dto.getEmail() != null) {
             boolean exists = baseMapper.exists(Wrappers.<Member>lambdaQuery().eq(Member::getEmail, dto.getEmail()));
-            if (!exists) throw new CustomException("邮箱已存在", null, HttpStatus.CONFLICT);
+            if (exists) throw new CustomException("邮箱已存在", null, HttpStatus.NO_CONTENT);
         }
 
         if (dto.getMobile() != null) {
             boolean exists = baseMapper.exists(Wrappers.<Member>lambdaQuery().eq(Member::getMobile, dto.getMobile()));
-            if (!exists) throw new CustomException("手机号已存在", null, HttpStatus.CONFLICT);
+            if (exists) throw new CustomException("手机号已存在", null, HttpStatus.NO_CONTENT);
         }
 
         Member entity = new Member();
@@ -104,5 +104,15 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
             BeanUtils.copyProperties(entity, vo);
             return vo;
         }).toList();
+    }
+
+    @Override
+    public String getSaltedPassword(String key) {
+        LambdaQueryWrapper<Member> qw = Wrappers.lambdaQuery();
+        qw.eq(Member::getUsername, key)
+                .or().eq(Member::getEmail, key)
+                .or().eq(Member::getMobile, key);
+        Member member = baseMapper.selectOne(qw);
+        return member == null ? null : member.getPassword();
     }
 }

@@ -12,6 +12,8 @@ import feign.FeignException;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +22,8 @@ import java.time.LocalDateTime;
 public class LoginServiceEmailImpl implements LoginService {
 
     public static final String USER_REGISTER_KEY = "user:register:";
+
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Autowired
     ThirdPartyFeignClient thirdPartyFeignClient;
@@ -40,32 +44,33 @@ public class LoginServiceEmailImpl implements LoginService {
     public boolean register(String username, String password, String email, String code) {
         R<Boolean> verifyResult = thirdPartyFeignClient.verifyCode(code, email);
         if (!verifyResult.getData()) {
-            return false;
+            throw new CustomException("验证码错误", null, HttpStatus.BAD_REQUEST);
         }
 
         MemberDTO member = new MemberDTO();
         member.setUsername(username);
-        member.setPassword(password);
         member.setEmail(email);
         member.setStatus(1);
         member.setCreateTime(LocalDateTime.now());
 
-        try{
-            R<?> registerResult = memberFeignClient.createMember(member);
-            return registerResult.getCode() == RCT.SUCCESS;
-        }catch (FeignException e) {
-            if (e.status() == HttpStatus.CONFLICT.value()) {
-                String responseBody = e.contentUTF8();
-                ObjectMapper mapper = new ObjectMapper();
-                R<?> r = null;
-                try {
-                    r = mapper.readValue(responseBody, R.class);
-                } catch (Exception ex) {
-                    // ...
-                }
-                if(r != null) throw new CustomException(e.getMessage(), e, HttpStatus.CONFLICT, r);
-            }
-            throw new CustomException(e.getMessage(), e);
+        String encodedPassword = passwordEncoder.encode(password);
+        member.setPassword(encodedPassword);
+
+        R<?> res = memberFeignClient.createMember(member);
+
+        if (res.getCode() != RCT.SUCCESS) {
+            throw new CustomException(res.getMsg(), null, HttpStatus.CONFLICT);
         }
+
+        return true;
+    }
+
+    @Override
+    public boolean login(String username, String password) {
+        String saltedPassword = memberFeignClient.getSaltedPassword(username);
+        if (saltedPassword == null) {
+            return false;
+        }
+        return passwordEncoder.matches(password, saltedPassword);
     }
 }
