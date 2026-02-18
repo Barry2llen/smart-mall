@@ -6,6 +6,7 @@ spring:
   config:
     import:
       - nacos:commons?group=commons
+      - nacos:jwt?group=auth
   cloud:
     nacos:
       config:

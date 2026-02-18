@@ -12,14 +12,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Nullable;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -94,5 +93,15 @@ public class MemberController {
     @GetMapping("/salt")
     public @Nullable String getSaltedPassword(@RequestParam @NotBlank String key) {
         return memberService.getSaltedPassword(key);
+    }
+
+    @Parameters({
+            @Parameter(name = "email", description = "邮箱", required = true),
+            @Parameter(name = "username", description = "用户名", required = false)
+    })
+    @Operation(summary = "通过邮箱获取用户/创建新用户（仅在oauth登录时内部调用）")
+    @GetMapping("/putByEmail")
+    public @Nullable Member putByEmail(@RequestParam @NotNull String email, @RequestParam String username) {
+        return memberService.putByEmail(email, username);
     }
 }

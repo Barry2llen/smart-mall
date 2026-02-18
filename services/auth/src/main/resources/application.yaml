@@ -3,6 +3,7 @@ server:
 spring:
   application:
     name: auth
+
   config:
     import:
       - nacos:commons-mysql?group=commons
@@ -10,6 +11,8 @@ spring:
       #      - nacos:commons-redisson?group=commons
       - nacos:commons-redis-cache?group=commons
       - nacos:commons?group=commons
+      - nacos:oauth2?group=auth
+      - nacos:jwt?group=auth
   cloud:
     nacos:
       config:

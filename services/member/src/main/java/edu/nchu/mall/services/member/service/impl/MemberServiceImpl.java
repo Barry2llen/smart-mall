@@ -13,6 +13,7 @@ import edu.nchu.mall.models.vo.MemberVO;
 import edu.nchu.mall.services.member.dao.MemberLevelMapper;
 import edu.nchu.mall.services.member.dao.MemberMapper;
 import edu.nchu.mall.services.member.service.MemberService;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -34,9 +35,14 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     @Autowired
     MemberLevelMapper memberLevelMapper;
 
+    @CacheEvict(key = "#email")
+    public void evictByEmail(String email) {
+    }
+
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
+            @CacheEvict(key = "#dto.email"),
             @CacheEvict(key = "'list'")
     })
     public boolean updateById(MemberDTO dto) {
@@ -61,12 +67,17 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
             @CacheEvict(key = "'list'")
     })
     public boolean removeById(Serializable id) {
+        Member member = getById(id);
+        if (member == null) return false;
+        var self = ((MemberServiceImpl) AopContext.currentProxy());
+        self.evictByEmail(member.getEmail());
         return super.removeById(id);
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(key = "'list'")
+            @CacheEvict(key = "'list'"),
+            @CacheEvict(key = "#dto.email")
     })
     public boolean save(MemberDTO dto) {
         if (dto.getUsername() != null) {
@@ -114,5 +125,23 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
                 .or().eq(Member::getMobile, key);
         Member member = baseMapper.selectOne(qw);
         return member == null ? null : member.getPassword();
+    }
+
+    @Override
+    @Cacheable(key = "#email")
+    public Member putByEmail(String email, String username) {
+        var self = ((MemberServiceImpl) AopContext.currentProxy());
+        Member member = this.getOne(Wrappers.<Member>lambdaQuery().eq(Member::getEmail, email));
+
+        if (member != null) {
+            return member;
+        }
+
+        member = new Member();
+        member.setEmail(email);
+        member.setUsername(username == null ? email : username);
+        self.save(member);
+
+        return member;
     }
 }

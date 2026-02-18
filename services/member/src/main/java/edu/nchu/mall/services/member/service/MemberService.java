@@ -23,4 +23,6 @@ public interface MemberService extends IService<Member> {
     List<MemberVO> getMembers(Integer pageNum, Integer pageSize);
 
     String getSaltedPassword(String key);
+
+    Member putByEmail(String email, String username);
 }
