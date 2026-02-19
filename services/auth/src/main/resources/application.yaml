@@ -38,3 +38,4 @@ springdoc:
       paths-to-match: '/**'
       packages-to-scan: edu.nchu.mall.services.auth.controller
 
+

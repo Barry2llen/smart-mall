@@ -35,7 +35,7 @@ public class JwtUtils {
      * @return JWT Token
      */
     public String generateAccessToken(String subject, Map<String, Object> claims) {
-        Map<String, Object> _claims = new HashMap<>(claims);
+        Map<String, Object> _claims = new HashMap<>(claims == null ? Map.of() : claims);
         _claims.put("type", "access");
         return generateToken(subject, _claims, accessExpirationMs);
     }

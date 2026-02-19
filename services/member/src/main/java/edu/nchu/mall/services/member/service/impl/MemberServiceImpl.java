@@ -144,4 +144,16 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
 
         return member;
     }
+
+    @Override
+    public Long getMemberIdByUsernameOrEmail(String key) {
+        LambdaQueryWrapper<Member> qw = Wrappers.lambdaQuery();
+        qw.eq(Member::getUsername, key)
+                .or().eq(Member::getEmail, key)
+                .select(Member::getId);
+        Member member = baseMapper.selectOne(qw);
+        return member == null ? null : member.getId();
+    }
+
+
 }

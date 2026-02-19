@@ -6,9 +6,9 @@ public interface LoginService {
 
     boolean register(String username, String password, String emailOrPhone, String code);
 
-    default boolean logout() {
-        return false;
+    default boolean logout(long userId) {
+        return true;
     }
 
-    boolean login(String username, String password);
+    Long login(String username, String password);
 }

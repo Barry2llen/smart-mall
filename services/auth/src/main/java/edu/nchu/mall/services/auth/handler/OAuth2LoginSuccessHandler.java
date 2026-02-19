@@ -3,6 +3,7 @@ package edu.nchu.mall.services.auth.handler;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.member.MemberFeignClient;
 import edu.nchu.mall.models.entity.Member;
+import edu.nchu.mall.services.auth.constants.RedisConstant;
 import edu.nchu.mall.services.auth.utils.JwtUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -24,6 +26,9 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @RefreshScope
 @Component
@@ -37,6 +42,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Autowired
     MemberFeignClient memberFeignClient;
+
+    @Autowired
+    StringRedisTemplate redisTemplate;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -78,7 +86,45 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         Cookie cookie = new Cookie(cookieName, refreshToken);
         cookie.setMaxAge((int)(jwtUtils.getRefreshExpirationMs() / 1000));
         cookie.setHttpOnly(true);
-        cookie.setPath("/");
+        cookie.setPath("/api/auth/refresh");
+
+        Long id = member.getId();
+        CompletableFuture<Boolean> t = CompletableFuture.supplyAsync(() -> {
+            try {
+                redisTemplate.opsForValue().set(
+                        RedisConstant.REFRESH_TOKEN_KEY + refreshToken,
+                        String.valueOf(id),
+                        jwtUtils.getRefreshExpirationMs(),
+                        TimeUnit.MILLISECONDS
+                );
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        });
+
+        CompletableFuture<Boolean> i = CompletableFuture.supplyAsync(() -> {
+            try {
+                redisTemplate.opsForValue().set(
+                        RedisConstant.REFRESH_TOKEN_KEY + id,
+                        refreshToken,
+                        jwtUtils.getRefreshExpirationMs(),
+                        TimeUnit.MILLISECONDS
+                );
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        });
+
+        CompletableFuture.allOf(t, i).join();
+        try {
+            if (!t.isDone() || !i.isDone() || t.get().equals(Boolean.FALSE) || i.get().equals(Boolean.FALSE)) {
+                throw new CustomException("无法连接redis", null, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
 
         response.addCookie(cookie);
         response.addHeader("Authorization", "Bearer " + accessToken);

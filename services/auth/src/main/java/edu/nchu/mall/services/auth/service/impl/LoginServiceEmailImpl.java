@@ -1,16 +1,15 @@
 package edu.nchu.mall.services.auth.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.member.MemberFeignClient;
 import edu.nchu.mall.components.feign.third_party.ThirdPartyFeignClient;
 import edu.nchu.mall.models.dto.MemberDTO;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.services.auth.constants.RedisConstant;
 import edu.nchu.mall.services.auth.service.LoginService;
-import feign.FeignException;
-import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +31,7 @@ public class LoginServiceEmailImpl implements LoginService {
     MemberFeignClient memberFeignClient;
 
     @Autowired
-    RedissonClient redissonClient;
+    StringRedisTemplate redisTemplate;
 
     @Override
     public boolean sendCode(String email) {
@@ -66,11 +65,25 @@ public class LoginServiceEmailImpl implements LoginService {
     }
 
     @Override
-    public boolean login(String username, String password) {
+    public Long login(String username, String password) {
         String saltedPassword = memberFeignClient.getSaltedPassword(username);
         if (saltedPassword == null) {
-            return false;
+            return null;
         }
-        return passwordEncoder.matches(password, saltedPassword);
+        if (!passwordEncoder.matches(password, saltedPassword)) {
+            return null;
+        }
+
+        return memberFeignClient.getId(username);
+    }
+
+    @Override
+    public boolean logout(long userId) {
+        String refresh_token = redisTemplate.opsForValue().get(RedisConstant.REFRESH_TOKEN_KEY + userId);
+        if (refresh_token != null) {
+            redisTemplate.delete(RedisConstant.REFRESH_TOKEN_KEY + refresh_token);
+        }
+        redisTemplate.delete(RedisConstant.REFRESH_TOKEN_KEY + userId);
+        return true;
     }
 }

@@ -104,4 +104,11 @@ public class MemberController {
     public @Nullable Member putByEmail(@RequestParam @NotNull String email, @RequestParam String username) {
         return memberService.putByEmail(email, username);
     }
+
+    @Parameters(@Parameter(name = "key", description = "username/email"))
+    @Operation(description = "根据username/email获取用户id")
+    @GetMapping("/id/{key}")
+    public @Nullable Long getId(@PathVariable @NotBlank String key) {
+        return memberService.getMemberIdByUsernameOrEmail(key);
+    }
 }
