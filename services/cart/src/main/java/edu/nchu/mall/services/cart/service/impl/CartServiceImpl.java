@@ -233,7 +233,7 @@ public class CartServiceImpl implements CartService {
         }
 
         cartItem.setCount(count);
-        cartItem.setTime(LocalDateTime.now());
+        //cartItem.setTime(LocalDateTime.now());
 
         try {
             redisTemplate.opsForHash().put(key, hashKey, mapper.writeValueAsString(cartItem));
@@ -263,7 +263,7 @@ public class CartServiceImpl implements CartService {
         }
 
         cartItem.setSelected(selected);
-        cartItem.setTime(LocalDateTime.now());
+        //cartItem.setTime(LocalDateTime.now());
 
         try {
             redisTemplate.opsForHash().put(key, hashKey, mapper.writeValueAsString(cartItem));
