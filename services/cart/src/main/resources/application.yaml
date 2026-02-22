@@ -1,0 +1,42 @@
+server:
+  port: 9100
+spring:
+  application:
+    name: cart
+  config:
+    import:
+      - nacos:commons-mysql?group=commons
+      - nacos:commons-redis?group=commons
+      - nacos:commons-redis-cache?group=commons
+      - nacos:commons?group=commons
+      - nacos:cart?group=app
+  cloud:
+    nacos:
+      config:
+        namespace: dev
+        file-extension: yaml
+      server-addr: 127.0.0.1:8848
+  cache:
+    redis:
+      key-prefix: 'cart::'
+    cache-names:
+      - cart-cache
+  datasource:
+    url: jdbc:mysql://localhost:3306/product?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: edu.nchu.mall.services.cart.controller
+
+cache:
+  ttl:
+    cart-cache-ms: 1000
+

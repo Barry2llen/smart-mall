@@ -18,4 +18,13 @@
         </where>
         GROUP BY sku_id
     </select>
+    <select id="getStockBySkuId" resultType="edu.nchu.mall.models.vo.SkuStockVO">
+        SELECT
+            sku_id AS skuId,
+            SUM(COALESCE(stock, 0)) AS stock,
+            SUM(COALESCE(stock_locked, 0)) AS stockLocked
+        FROM ware.wms_ware_sku
+        WHERE
+            sku_id = #{skuId}
+    </select>
 </mapper>

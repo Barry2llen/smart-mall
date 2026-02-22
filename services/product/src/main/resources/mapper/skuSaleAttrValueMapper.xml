@@ -10,4 +10,20 @@
         WHERE spu_id = #{spuId}
         GROUP BY ssav.attr_id, ssav.attr_name;
     </select>
+    <select id="getSaleAttrValues" resultType="java.lang.String">
+        SELECT CONCAT(attr_name, ':', attr_value) AS attrs
+        FROM product.pms_sku_sale_attr_value
+        WHERE sku_id = #{skuId};
+    </select>
+    <select id="getBatchSaleAttrValues" resultType="edu.nchu.mall.services.product.vo.SaleAttrValueVO">
+        SELECT
+            sku_id AS skuId,
+            GROUP_CONCAT(CONCAT(attr_name, ':', attr_value) SEPARATOR ';') AS nameValues
+        FROM product.pms_sku_sale_attr_value
+        WHERE sku_id IN
+        <foreach item="skuId" collection="skuIds" separator="," open="(" close=")">
+            #{skuId}
+        </foreach>
+        GROUP BY sku_id;
+    </select>
 </mapper>

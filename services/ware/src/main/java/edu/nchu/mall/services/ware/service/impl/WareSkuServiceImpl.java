@@ -82,6 +82,11 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> impl
         return baseMapper.getStockBySkuIds(skuIds);
     }
 
+    @Override
+    public SkuStockVO getStockBySkuId(Long skuId) {
+        return baseMapper.getStockBySkuId(skuId);
+    }
+
     @Cacheable(cacheNames = "wareSku:list", key = "#pageNum + ':' + #pageSize")
     public List<WareSku> list(Integer pageNum, Integer pageSize) {
         return super.list(new Page<>(pageNum, pageSize));

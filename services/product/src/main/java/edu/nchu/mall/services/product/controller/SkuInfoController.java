@@ -20,7 +20,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Sku信息")
 @Slf4j
@@ -30,6 +32,14 @@ public class SkuInfoController {
 
     @Autowired
     SkuInfoService skuInfoService;
+
+    @Parameters(@Parameter(name = "sid", description = "SkuId"))
+    @Operation(summary = "判断Sku是否存在")
+    @GetMapping("/exists/{skuId}")
+    public R<Boolean> exists(@PathVariable Long skuId) {
+        boolean res = skuInfoService.existsById(skuId);
+        return new R<>(RCT.SUCCESS, "success", res);
+    }
 
     @Parameters(@Parameter(name = "sid", description = "SkuInfo主键"))
     @Operation(summary = "获取SkuInfo详情")
@@ -77,5 +87,12 @@ public class SkuInfoController {
     public R<SkuItemVO> getSkuItem(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
         SkuItemVO data = skuInfoService.getSkuItem(Long.parseLong(sid));
         return new R<>(RCT.SUCCESS, "success", data);
+    }
+
+    @Parameters(@Parameter(name = "ids", description = "Sku主键列表"))
+    @Operation(summary = "批量获取SkuInfo")
+    @PostMapping("/batch")
+    public R<Map<Long, SkuInfoVO>> getBatch(@RequestBody Collection<Long> ids) {
+        return R.success(skuInfoService.getBatchByIds(ids));
     }
 }

@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.product.controller;
 
+import edu.nchu.mall.models.annotation.NotNullCollection;
 import edu.nchu.mall.models.entity.SkuSaleAttrValue;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
@@ -9,11 +10,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @Hidden
 @Tag(name = "SkuSaleAttrValue")
@@ -24,6 +29,20 @@ public class SkuSaleAttrValueController {
 
     @Autowired
     SkuSaleAttrValueService skuSaleAttrValueService;
+
+    @Parameters(@Parameter(name = "skuId", description = "SkuId"))
+    @Operation(summary = "获取Sku的属性值")
+    @GetMapping("/sku/{skuId}")
+    public R<List<String>> getSkuAttrValues(@PathVariable Long skuId) {
+        return new R<>(RCT.SUCCESS, "success", skuSaleAttrValueService.getSkuAttrValues(skuId));
+    }
+
+    @Parameters(@Parameter(name = "skuIds", description = "SkuId列表"))
+    @Operation(summary = "批量获取Sku的属性值")
+    @PostMapping("/sku/batch")
+    public R<Map<Long, List<String>>> getBatchSkuAttrValues(@RequestParam @Valid @NotNullCollection List<Long> skuIds) {
+        return new R<>(RCT.SUCCESS, "success", skuSaleAttrValueService.getBatchSkuAttrValues(skuIds));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "SkuSaleAttrValue主键"))
     @Operation(summary = "获取SkuSaleAttrValue详情")

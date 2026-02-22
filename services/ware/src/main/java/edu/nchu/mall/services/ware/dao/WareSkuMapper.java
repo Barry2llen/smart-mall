@@ -11,4 +11,6 @@ import java.util.List;
 @Mapper
 public interface WareSkuMapper extends BaseMapper<WareSku> {
     List<SkuStockVO> getStockBySkuIds(@Param("skuIds") List<Long> skuIds);
+
+    SkuStockVO getStockBySkuId(@Param("skuId") Long skuId);
 }

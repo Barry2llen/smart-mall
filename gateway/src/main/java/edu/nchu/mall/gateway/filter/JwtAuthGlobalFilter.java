@@ -25,6 +25,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     private JwtUtils jwtUtils;
 
     private final static Set<String> WHITE_LIST;
+    private final static Map<String, String> WHITE_LIST_HEADERS;
     private final static Set<String> HEADERS;
 
     static {
@@ -37,6 +38,10 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         HEADERS = Set.of(
                 "X-User-Id"
         );
+
+        WHITE_LIST_HEADERS = Map.of(
+                "X-PWD", "barry2llen"
+        );
     }
 
     @Override
@@ -46,6 +51,12 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         String path = request.getURI().getPath();
 
         for (Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
+            if (WHITE_LIST_HEADERS.containsKey(entry.getKey())) {
+                if (WHITE_LIST_HEADERS.get(entry.getKey()).equals(entry.getValue().getFirst())) {
+                    return chain.filter(exchange);
+                }
+            }
+
             if (HEADERS.contains(entry.getKey())) {
                 return unauthorizedResponse(exchange, "非法请求");
             }

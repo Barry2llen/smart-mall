@@ -21,6 +21,7 @@
         <module>search</module>
         <module>auth</module>
         <module>third-party</module>
+        <module>cart</module>
     </modules>
 
     <dependencyManagement>

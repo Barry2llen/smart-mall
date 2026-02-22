@@ -25,4 +25,6 @@ public interface WareSkuService extends IService<WareSku> {
     List<WareSku> list(Integer pageNum, Integer pageSize, String wareKey, String skuKey);
 
     List<SkuStockVO> getStocksBySkuIds(List<Long> skuIds);
+
+    SkuStockVO getStockBySkuId(Long skuId);
 }

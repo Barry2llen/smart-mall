@@ -22,21 +22,25 @@ import jakarta.annotation.Nullable;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @CacheConfig(cacheNames = "skuInfo")
@@ -58,11 +62,53 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoMapper, SkuInfo> impl
     @Autowired
     SkuSaleAttrValueMapper skuSaleAttrValueMapper;
 
+    @Autowired
+    CacheManager cacheManager;
+
     private SkuInfoVO convert2VO(@Nullable SkuInfo info) {
         SkuInfoVO vo = new SkuInfoVO();
         if (info == null) return vo;
         BeanUtils.copyProperties(info, vo);
         return vo;
+    }
+
+    private boolean checkSkuInfoCache(Serializable id) {
+        Cache cache = cacheManager.getCache("skuInfo");
+        return cache != null && cache.get(id) != null;
+    }
+
+    @Override
+    public Map<Long, SkuInfoVO> getBatchByIds(Iterable<Long> ids) {
+        var self = (SkuInfoServiceImpl) AopContext.currentProxy();
+        Map<Long, SkuInfoVO> res = new HashMap<>();
+        List<Long> nonCached = new LinkedList<>();
+        ids.forEach(id -> {
+            if (checkSkuInfoCache(id)) {
+                res.put(id, self.getVOById(id));
+            }else {
+                nonCached.add(id);
+            }
+        });
+
+        if (nonCached.isEmpty()) {
+            return res;
+        }
+
+        List<SkuInfoVO> selected = baseMapper.selectBatchIds(nonCached).stream().map(this::convert2VO).toList();
+        Cache cache = cacheManager.getCache("skuInfo");
+        selected.forEach(vo -> {
+            res.put(vo.getSkuId(), vo);
+            if (cache != null) {
+                cache.put(vo.getSkuId(), vo);
+            }
+        });
+
+        return res;
+    }
+
+    @Override
+    public boolean existsById(Long skuId) {
+        return baseMapper.exists(Wrappers.<SkuInfo>lambdaQuery().eq(SkuInfo::getSkuId, skuId));
     }
 
     @Override
@@ -177,4 +223,5 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoMapper, SkuInfo> impl
 
         return item;
     }
+
 }

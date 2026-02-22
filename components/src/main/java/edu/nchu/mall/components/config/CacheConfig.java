@@ -8,32 +8,25 @@ import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @Configuration
-@RefreshScope
 @EnableConfigurationProperties({CacheProperties.class})
 public class CacheConfig {
 
-    @Value("${cache.random-ttl-bound-ms:30000}")
-    private long RANDOM_TTL_BOUND_MS;
-
-    @Value("${cache.null-ttl-ms:10000}")
-    private long NULL_TTL_MS;
+    @Autowired
+    RedisCacheTtlConfig ttlFunction;
 
     @Bean
     public RedisCacheConfiguration redisConfiguration(CacheProperties cacheProperties){
@@ -73,12 +66,7 @@ public class CacheConfig {
         CacheProperties.Redis redisProperties = cacheProperties.getRedis();
 
         if (redisProperties.getTimeToLive() != null) {
-            config = config.entryTtl((key, value) -> {
-                if(value == null){
-                    return Duration.ofMillis(NULL_TTL_MS);
-                }
-                return redisProperties.getTimeToLive().plus(Duration.ofMillis(ThreadLocalRandom.current().nextLong(RANDOM_TTL_BOUND_MS)));
-            });
+            config = config.entryTtl(ttlFunction);
         }else{
             log.warn("Redis cache default TTL is not set, it is recommended to set a reasonable TTL to avoid cache avalanche.");
         }

@@ -84,6 +84,14 @@ public class WareSkuController {
         return R.success(wareSkuService.getStocksBySkuIds(skuIds));
     }
 
+    @Parameters(@Parameter(name = "skuId", description = "skuId"))
+    @Operation(summary = "获取sku库存")
+    @GetMapping("/stock/{skuId}")
+    public R<SkuStockVO> getStock(@PathVariable Long skuId) {
+        SkuStockVO data = wareSkuService.getStockBySkuId(skuId);
+        return new R<>(RCT.SUCCESS, "success", data);
+    }
+
     @Parameters({
             @Parameter(name = "pageNum", description = "页码"),
             @Parameter(name = "pageSize", description = "每页数量"),

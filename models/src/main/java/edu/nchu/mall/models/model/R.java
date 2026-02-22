@@ -40,4 +40,12 @@ public class R<T>{
     public static <T> R<T> fail(String msg) {
         return new R<>(RCT.FAIL, msg, null);
     }
+
+    public static <T> R<T> fail() {
+        return new R<>(RCT.FAIL, "failure", null);
+    }
+
+    public static R<?> result(boolean res) {
+        return res ? R.success() : R.fail();
+    }
 }

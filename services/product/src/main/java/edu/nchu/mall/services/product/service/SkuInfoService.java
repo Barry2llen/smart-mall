@@ -9,6 +9,7 @@ import edu.nchu.mall.models.vo.SkuItemVO;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public interface SkuInfoService extends IService<SkuInfo> {
 
@@ -19,4 +20,8 @@ public interface SkuInfoService extends IService<SkuInfo> {
     List<SkuInfoVO> list(Integer pageNum, Integer pageSize, Long catalogId, Long brandId, String key, BigDecimal minPrice, BigDecimal maxPrice);
 
     SkuItemVO getSkuItem(long l);
+
+    Map<Long, SkuInfoVO> getBatchByIds(Iterable<Long> ids);
+
+    boolean existsById(Long skuId);
 }
