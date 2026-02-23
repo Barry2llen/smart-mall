@@ -1,7 +1,7 @@
 package edu.nchu.mall.services.search.controller;
 
 
-import edu.nchu.mall.models.annotation.NotNullCollection;
+import edu.nchu.mall.models.annotation.validation.NotNullCollection;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.services.search.document.Product;
 import edu.nchu.mall.services.search.dto.ProductSearchParam;
@@ -11,7 +11,6 @@ import edu.nchu.mall.services.search.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "商品")
 @RestController
 @RequestMapping("/product")
 public class ProductController {

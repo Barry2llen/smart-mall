@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.cart.web;
 
+import edu.nchu.mall.models.annotation.bind.UserId;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.services.cart.dto.CartItemDTO;
 import edu.nchu.mall.services.cart.service.CartService;
@@ -15,13 +16,14 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "购物车服务")
 @RestController
-public class CartController {
+@RequestMapping("/public")
+public class CartWebController {
     @Autowired
     CartService cartService;
 
     @Operation(description = "获取购物车")
     @GetMapping
-    public Cart getCart(@RequestHeader("X-User-Id") Long userId) {
+    public Cart getCart(@UserId Long userId) {
         return cartService.getCart(userId);
     }
 
@@ -30,7 +32,7 @@ public class CartController {
     })
     @Operation(description = "添加购物车项")
     @PostMapping
-    public R<?> addCartItem(@RequestHeader("X-User-Id") Long userId, @RequestBody @Valid CartItemDTO dto) {
+    public R<?> addCartItem(@UserId Long userId, @RequestBody @Valid CartItemDTO dto) {
         CartService.Status res = cartService.addCartItem(userId, dto);
         return res == CartService.Status.SUCCESS ? R.success() : R.fail(res.getMessage());
     }
@@ -40,7 +42,7 @@ public class CartController {
     })
     @Operation(description = "删除购物车项")
     @DeleteMapping("/{skuId}")
-    public R<?> deleteCartItem(@RequestHeader("X-User-Id") Long userId, @PathVariable Long skuId) {
+    public R<?> deleteCartItem(@UserId Long userId, @PathVariable Long skuId) {
         CartService.Status res = cartService.deleteCartItem(userId, skuId);
         return res == CartService.Status.SUCCESS ? R.success() : R.fail(res.getMessage());
     }
@@ -50,7 +52,7 @@ public class CartController {
     })
     @Operation(description = "选中购物车项")
     @PutMapping("/{skuId}/check")
-    public R<?> checkCartItem(@RequestHeader("X-User-Id") Long userId, @PathVariable Long skuId) {
+    public R<?> checkCartItem(@UserId Long userId, @PathVariable Long skuId) {
         CartService.Status res = cartService.checkCartItem(userId, skuId);
         return res == CartService.Status.SUCCESS ? R.success() : R.fail(res.getMessage());
     }
@@ -60,7 +62,7 @@ public class CartController {
     })
     @Operation(description = "取消选中购物车项")
     @PutMapping("/{skuId}/uncheck")
-    public R<?> uncheckCartItem(@RequestHeader("X-User-Id") Long userId, @PathVariable Long skuId) {
+    public R<?> uncheckCartItem(@UserId Long userId, @PathVariable Long skuId) {
         CartService.Status res = cartService.uncheckCartItem(userId, skuId);
         return res == CartService.Status.SUCCESS ? R.success() : R.fail(res.getMessage());
     }
@@ -71,7 +73,7 @@ public class CartController {
     })
     @Operation(description = "修改购物车项数量")
     @PutMapping("/{skuId}/count")
-    public R<?> updateCartItemCount(@RequestHeader("X-User-Id") Long userId,
+    public R<?> updateCartItemCount(@UserId Long userId,
                                     @PathVariable Long skuId,
                                     @RequestParam @Positive(message = "数量必须大于0") Integer count) {
         CartService.Status res = cartService.updateCartItemCount(userId, skuId, count);

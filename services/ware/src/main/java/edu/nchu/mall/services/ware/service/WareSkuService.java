@@ -1,10 +1,8 @@
 package edu.nchu.mall.services.ware.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import edu.nchu.mall.models.annotation.NotNullCollection;
 import edu.nchu.mall.models.entity.WareSku;
 import edu.nchu.mall.models.vo.SkuStockVO;
-import jakarta.validation.Valid;
 
 import java.io.Serializable;
 import java.util.List;

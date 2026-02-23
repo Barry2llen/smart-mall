@@ -26,18 +26,19 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
     private final static Set<String> WHITE_LIST;
     private final static Map<String, String> WHITE_LIST_HEADERS;
-    private final static Set<String> HEADERS;
+//    private final static Set<String> HEADERS;
 
     static {
         WHITE_LIST = Set.of(
-                "/auth/login",
-                "/auth/register",
-                "/auth/refresh"
+                "/auth/public/login",
+                "/auth/public/register",
+                "/auth/public/refresh",
+                "/auth/public/sendCode"
         );
 
-        HEADERS = Set.of(
-                "X-User-Id"
-        );
+//        HEADERS = Set.of(
+//                "X-User-Id"
+//        );
 
         WHITE_LIST_HEADERS = Map.of(
                 "X-PWD", "barry2llen"
@@ -50,21 +51,19 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        for (Map.Entry<String, List<String>> entry : request.getHeaders().entrySet()) {
-            if (WHITE_LIST_HEADERS.containsKey(entry.getKey())) {
-                if (WHITE_LIST_HEADERS.get(entry.getKey()).equals(entry.getValue().getFirst())) {
-                    return chain.filter(exchange);
-                }
-            }
-
-            if (HEADERS.contains(entry.getKey())) {
-                return unauthorizedResponse(exchange, "非法请求");
-            }
-        }
-
         // 1. 白名单放行：登录、OAuth2 回调、注册等接口不需要 Token
         if (WHITE_LIST.contains(path) || path.contains("oauth2")) {
             return chain.filter(exchange);
+        }
+
+        // 非public api不验证token
+        if (!path.contains("public")) {
+            for (Map.Entry<String, String> entry : WHITE_LIST_HEADERS.entrySet()) {
+                if (request.getHeaders().containsKey(entry.getKey()) && request.getHeaders().get(entry.getKey()).get(0).equals(entry.getValue())) {
+                    return chain.filter(exchange);
+                }
+            }
+            return notFoundResponse(exchange, "not found");
         }
 
         // 2. 提取并校验 Token
@@ -114,6 +113,19 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 简单返回一个 JSON 错误提示
         String result = String.format("{\"code\": 401, \"message\": \"%s\"}", msg);
+        return response.writeWith(Mono.just(response.bufferFactory().wrap(result.getBytes())));
+    }
+
+    /**
+     * 封装 404 拦截响应
+     */
+    private Mono<Void> notFoundResponse(ServerWebExchange exchange, String msg) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.NOT_FOUND);
+        response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
+
+        // 简单返回一个 JSON 错误提示
+        String result = String.format("{\"code\": 404, \"message\": \"%s\"}", msg);
         return response.writeWith(Mono.just(response.bufferFactory().wrap(result.getBytes())));
     }
 

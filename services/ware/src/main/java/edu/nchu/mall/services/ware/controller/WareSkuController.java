@@ -1,6 +1,6 @@
 package edu.nchu.mall.services.ware.controller;
 
-import edu.nchu.mall.models.annotation.NotNullCollection;
+import edu.nchu.mall.models.annotation.validation.NotNullCollection;
 import edu.nchu.mall.models.entity.WareSku;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;

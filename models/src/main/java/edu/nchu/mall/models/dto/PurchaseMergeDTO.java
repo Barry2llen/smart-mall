@@ -1,6 +1,6 @@
 package edu.nchu.mall.models.dto;
 
-import edu.nchu.mall.models.annotation.NotNullCollection;
+import edu.nchu.mall.models.annotation.validation.NotNullCollection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;

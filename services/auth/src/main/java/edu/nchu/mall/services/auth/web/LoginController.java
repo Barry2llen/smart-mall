@@ -1,5 +1,6 @@
 package edu.nchu.mall.services.auth.web;
 
+import edu.nchu.mall.models.annotation.bind.UserId;
 import edu.nchu.mall.models.dto.UserLogin;
 import edu.nchu.mall.models.dto.UserRegister;
 import edu.nchu.mall.models.model.R;
@@ -22,6 +23,7 @@ import java.util.Map;
 @Tag(name = "登录注册")
 @RestController
 @RefreshScope
+@RequestMapping("public")
 public class LoginController {
 
     @Autowired
@@ -34,7 +36,7 @@ public class LoginController {
     private String cookieName;
 
     @GetMapping("/test")
-    public String test(@RequestHeader("X-User-Id") String userId) {
+    public String test(@UserId String userId) {
         return userId;
     }
 
@@ -82,7 +84,7 @@ public class LoginController {
 
     @Operation(description = "用户登出")
     @GetMapping("/logout")
-    public R<?> logout(@RequestHeader("X-User-Id") Long userId) {
+    public R<?> logout(@UserId Long userId) {
         boolean res = loginService.logout(userId);
         return res ? R.success() : R.fail("登出失败");
     }

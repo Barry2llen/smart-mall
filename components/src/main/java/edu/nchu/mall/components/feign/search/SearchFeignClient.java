@@ -1,6 +1,6 @@
 package edu.nchu.mall.components.feign.search;
 
-import edu.nchu.mall.models.annotation.NotNullCollection;
+import edu.nchu.mall.models.annotation.validation.NotNullCollection;
 import edu.nchu.mall.models.document.EsProduct;
 import edu.nchu.mall.models.model.R;
 import jakarta.validation.Valid;
