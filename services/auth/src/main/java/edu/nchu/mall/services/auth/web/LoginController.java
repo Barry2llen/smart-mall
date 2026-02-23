@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.auth.controller;
+package edu.nchu.mall.services.auth.web;
 
 import edu.nchu.mall.models.dto.UserLogin;
 import edu.nchu.mall.models.dto.UserRegister;

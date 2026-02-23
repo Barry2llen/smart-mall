@@ -1,6 +1,7 @@
 package edu.nchu.mall.services.member.controller;
 
 import edu.nchu.mall.models.dto.MemberReceiveAddressDTO;
+import edu.nchu.mall.models.entity.MemberReceiveAddress;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.validation.Groups;
@@ -30,14 +31,6 @@ public class MemberReceiveAddressController {
 
     @Autowired
     MemberReceiveAddressService memberReceiveAddressService;
-
-    @Parameters(@Parameter(name = "sid", description = "会员收货地址主键"))
-    @Operation(summary = "获取会员收货地址详情")
-    @GetMapping("/{sid}")
-    public R<MemberReceiveAddressVO> getMemberReceiveAddress(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
-        MemberReceiveAddressVO data = memberReceiveAddressService.getMemberReceiveAddressById(Long.parseLong(sid));
-        return new R<>(RCT.SUCCESS, "success", data);
-    }
 
     @Parameters({
             @Parameter(name = "dto", description = "更新的会员收货地址信息")
@@ -75,13 +68,11 @@ public class MemberReceiveAddressController {
     }
 
     @Parameters({
-            @Parameter(name = "pageNum", description = "页码"),
-            @Parameter(name = "pageSize", description = "每页数量")
+        @Parameter(name = "memberId", description = "会员ID")
     })
     @Operation(summary = "获取会员收货地址列表")
-    @GetMapping
-    public R<List<MemberReceiveAddressVO>> list(@RequestParam @Valid @NotNull Integer pageNum,
-                                               @RequestParam @Valid @NotNull Integer pageSize) {
-        return R.success(memberReceiveAddressService.getMemberReceiveAddresses(pageNum, pageSize));
+    @GetMapping("/{memberId}")
+    public R<List<MemberReceiveAddress>> list(@PathVariable Long memberId) {
+        return R.success(memberReceiveAddressService.getMemberReceiveAddresses(memberId));
     }
 }

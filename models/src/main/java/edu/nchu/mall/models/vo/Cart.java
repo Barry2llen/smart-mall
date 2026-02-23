@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.cart.vo;
+package edu.nchu.mall.models.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

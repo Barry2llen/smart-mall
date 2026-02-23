@@ -9,6 +9,7 @@ spring:
       - nacos:commons-redis?group=commons
       - nacos:commons-redis-cache?group=commons
       - nacos:commons?group=commons
+      - nacos:rabbit?group=mq
   cloud:
     nacos:
       config:

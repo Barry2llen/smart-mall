@@ -4,7 +4,7 @@ import edu.nchu.mall.components.config.RedisCacheTtlConfig;
 import edu.nchu.mall.components.config.ThreadPoolConfig;
 import edu.nchu.mall.services.cart.config.CartRedisCacheTtlConfig;
 import edu.nchu.mall.services.cart.service.CartService;
-import edu.nchu.mall.services.cart.vo.Cart;
+import edu.nchu.mall.models.vo.Cart;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

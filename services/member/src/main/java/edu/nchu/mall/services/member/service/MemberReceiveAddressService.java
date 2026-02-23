@@ -19,5 +19,5 @@ public interface MemberReceiveAddressService extends IService<MemberReceiveAddre
 
     boolean save(MemberReceiveAddressDTO dto);
 
-    List<MemberReceiveAddressVO> getMemberReceiveAddresses(Integer pageNum, Integer pageSize);
+    List<MemberReceiveAddress> getMemberReceiveAddresses(Long memberId);
 }

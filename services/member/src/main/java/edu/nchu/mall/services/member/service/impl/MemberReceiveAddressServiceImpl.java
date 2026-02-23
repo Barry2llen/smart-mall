@@ -1,6 +1,7 @@
 package edu.nchu.mall.services.member.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.dto.MemberReceiveAddressDTO;
@@ -66,12 +67,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
 
     @Override
     @Cacheable(key = "'list'")
-    public List<MemberReceiveAddressVO> getMemberReceiveAddresses(Integer pageNum, Integer pageSize) {
-        IPage<MemberReceiveAddress> page = new Page<>(pageNum, pageSize);
-        return super.list(page).stream().map(entity -> {
-            MemberReceiveAddressVO vo = new MemberReceiveAddressVO();
-            BeanUtils.copyProperties(entity, vo);
-            return vo;
-        }).toList();
+    public List<MemberReceiveAddress> getMemberReceiveAddresses(Long memberId) {
+        return super.list(Wrappers.<MemberReceiveAddress>lambdaQuery().eq(MemberReceiveAddress::getMemberId, memberId));
     }
 }

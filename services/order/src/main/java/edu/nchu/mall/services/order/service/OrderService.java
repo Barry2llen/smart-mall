@@ -2,6 +2,7 @@ package edu.nchu.mall.services.order.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.Order;
+import edu.nchu.mall.services.order.vo.OrderConfirm;
 
 import java.io.Serializable;
 
@@ -14,4 +15,6 @@ public interface OrderService extends IService<Order> {
 
     @Override
     boolean removeById(Serializable id);
+
+    OrderConfirm confirmOrder(Long memberId);
 }

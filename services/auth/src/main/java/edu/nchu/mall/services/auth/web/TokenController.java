@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.auth.controller;
+package edu.nchu.mall.services.auth.web;
 
 import edu.nchu.mall.services.auth.constants.RedisConstant;
 import edu.nchu.mall.services.auth.utils.JwtUtils;

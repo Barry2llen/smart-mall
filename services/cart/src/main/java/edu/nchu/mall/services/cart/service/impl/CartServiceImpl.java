@@ -6,6 +6,7 @@ import edu.nchu.mall.components.config.ThreadPoolConfig;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.product.ProductFeignClient;
 import edu.nchu.mall.components.feign.ware.WareFeignClient;
+import edu.nchu.mall.components.utils.CallTaskUtils;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.model.Try;
@@ -16,8 +17,8 @@ import edu.nchu.mall.services.cart.dto.CartItemDTO;
 import edu.nchu.mall.services.cart.entity.CartItem;
 import edu.nchu.mall.services.cart.properties.CartConfigurationProperties;
 import edu.nchu.mall.services.cart.service.CartService;
-import edu.nchu.mall.services.cart.vo.Cart;
-import edu.nchu.mall.services.cart.vo.CartItemVO;
+import edu.nchu.mall.models.vo.Cart;
+import edu.nchu.mall.models.vo.CartItemVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,9 @@ import java.util.concurrent.Executor;
 public class CartServiceImpl implements CartService {
 
     @Autowired
+    CallTaskUtils callTaskUtils;
+
+    @Autowired
     StringRedisTemplate redisTemplate;
 
     @Autowired
@@ -49,14 +53,15 @@ public class CartServiceImpl implements CartService {
     WareFeignClient wareFeignClient;
 
     @Autowired
-    @Qualifier(ThreadPoolConfig.VTHREAD_POOL_NAME)
-    Executor executor;
-
-    @Autowired
     CartConfigurationProperties cartConfigurationProperties;
 
     @Autowired
     ObjectMapper mapper;
+
+    @Override
+    public List<CartItemVO> getCartItems(Long userId) {
+        return this.getCart(userId).getItems();
+    }
 
     @Override
     @Cacheable(key = "T(edu.nchu.mall.services.cart.constants.RedisConstant).MICRO_CACHE_MARK + #userId", sync = true)
@@ -77,23 +82,9 @@ public class CartServiceImpl implements CartService {
 
         List<Long> ids = items.stream().map(CartItem::getSkuId).toList();
 
-        var voTask = CompletableFuture.supplyAsync(() -> {
-            R<Map<Long, SkuInfoVO>> res = productFeignClient.getBatch(ids);
-            if (!res.getCode().equals(RCT.SUCCESS)) {
-                throw new RuntimeException();
-            }
-            return Try.success(res.getData());
-        }, executor).exceptionally(Try::failure);
+        var voTask = callTaskUtils.call(() -> productFeignClient.getBatch(ids));
 
-        var attrTask = CompletableFuture.supplyAsync(() -> {
-            R<Map<Long, List<String>>> res = productFeignClient.getBatchSkuAttrValues(ids);
-            if (!res.getCode().equals(RCT.SUCCESS)) {
-                throw new RuntimeException();
-            }
-            return Try.success(res.getData());
-        }, executor).exceptionally(Try::failure);
-
-        CompletableFuture.allOf(voTask, attrTask).join();
+        var attrTask = callTaskUtils.call(() -> productFeignClient.getBatchSkuAttrValues(ids));
 
         if (!Try.allSucceeded(voTask.join(), attrTask.join())) {
             throw new CustomException("获取商品信息失败");
@@ -153,21 +144,9 @@ public class CartServiceImpl implements CartService {
             return Status.SUCCESS;
         }
 
-        var existTask = CompletableFuture.supplyAsync(() -> {
-            R<SkuInfoVO> res = productFeignClient.getSkuInfo(String.valueOf(dto.getSkuId()));
-            if (!res.getCode().equals(RCT.SUCCESS)) {
-                throw new RuntimeException();
-            }
-            return Try.success(res.getData());
-        }, executor).exceptionally(Try::failure);
+        var existTask = callTaskUtils.call(() -> productFeignClient.getSkuInfo(String.valueOf(dto.getSkuId())));
 
-        var stockTask = CompletableFuture.supplyAsync(() -> {
-            R<SkuStockVO> res = wareFeignClient.getStockBySkuId(dto.getSkuId());
-            if (!res.getCode().equals(RCT.SUCCESS)) {
-                throw new RuntimeException();
-            }
-            return Try.success(res.getData());
-        }, executor).exceptionally(Try::failure);
+        var stockTask = callTaskUtils.call(() -> wareFeignClient.getStockBySkuId(dto.getSkuId()));
 
         CompletableFuture.allOf(existTask, stockTask).join();
 

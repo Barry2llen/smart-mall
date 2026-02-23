@@ -1,11 +1,15 @@
 package edu.nchu.mall.services.cart.service;
 
+import edu.nchu.mall.models.vo.CartItemVO;
 import edu.nchu.mall.services.cart.dto.CartItemDTO;
-import edu.nchu.mall.services.cart.vo.Cart;
-import jakarta.validation.Valid;
+import edu.nchu.mall.models.vo.Cart;
 import lombok.Getter;
 
+import java.util.List;
+
 public interface CartService {
+    List<CartItemVO> getCartItems(Long userId);
+
     Cart getCart(Long userId);
 
     Status addCartItem(Long userId, CartItemDTO dto);
