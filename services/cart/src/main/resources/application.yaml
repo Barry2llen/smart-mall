@@ -34,9 +34,11 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: edu.nchu.mall.services.cart.controller
+      packages-to-scan:
+#        - edu.nchu.mall.services.cart.controller
+        - edu.nchu.mall.services.cart.web
 
 cache:
   ttl:
-    cart-cache-ms: 1000
+    cart-cache-ms: 500
 

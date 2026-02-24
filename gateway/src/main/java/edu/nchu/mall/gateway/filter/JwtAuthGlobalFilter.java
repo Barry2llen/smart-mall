@@ -2,6 +2,7 @@ package edu.nchu.mall.gateway.filter;
 
 import io.jsonwebtoken.Claims;
 import edu.nchu.mall.gateway.utils.JwtUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -14,10 +15,12 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+//@Slf4j
 @Component
 public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
@@ -58,11 +61,18 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 非public api不验证token
         if (!path.contains("public")) {
+//            String clientIp = resolveClientIp(request);
+//            if (!isInternalIp(clientIp)) {
+//                log.error("非内网访问");
+//                return notFoundResponse(exchange, "not found");
+//            }
+
             for (Map.Entry<String, String> entry : WHITE_LIST_HEADERS.entrySet()) {
                 if (request.getHeaders().containsKey(entry.getKey()) && request.getHeaders().get(entry.getKey()).get(0).equals(entry.getValue())) {
                     return chain.filter(exchange);
                 }
             }
+//            log.error("内网访问但未携带密钥");
             return notFoundResponse(exchange, "not found");
         }
 
@@ -136,5 +146,78 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         return -100;
+    }
+
+    private String resolveClientIp(ServerHttpRequest request) {
+        String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
+        if (StringUtils.hasText(xForwardedFor)) {
+            String[] ips = xForwardedFor.split(",");
+            for (String ip : ips) {
+                String normalized = normalizeIp(ip);
+                if (StringUtils.hasText(normalized)) {
+                    return normalized;
+                }
+            }
+        }
+
+        String xRealIp = normalizeIp(request.getHeaders().getFirst("X-Real-IP"));
+        if (StringUtils.hasText(xRealIp)) {
+            return xRealIp;
+        }
+
+        InetSocketAddress remoteAddress = request.getRemoteAddress();
+        if (remoteAddress != null && remoteAddress.getAddress() != null) {
+            return normalizeIp(remoteAddress.getAddress().getHostAddress());
+        }
+        return null;
+    }
+
+    private String normalizeIp(String ip) {
+        if (!StringUtils.hasText(ip)) {
+            return null;
+        }
+        String normalized = ip.trim();
+        if (!StringUtils.hasText(normalized) || "unknown".equalsIgnoreCase(normalized)) {
+            return null;
+        }
+        int colonIndex = normalized.indexOf(':');
+        if (colonIndex > 0 && normalized.indexOf('.') > -1) {
+            normalized = normalized.substring(0, colonIndex);
+        }
+        return normalized;
+    }
+
+    private boolean isInternalIp(String ip) {
+        if (!StringUtils.hasText(ip) || ip.contains(":")) {
+            return false;
+        }
+
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+
+        int[] numbers = new int[4];
+        for (int i = 0; i < 4; i++) {
+            try {
+                numbers[i] = Integer.parseInt(parts[i]);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+            if (numbers[i] < 0 || numbers[i] > 255) {
+                return false;
+            }
+        }
+
+        int first = numbers[0];
+        int second = numbers[1];
+
+        if (first == 10 || first == 127) {
+            return true;
+        }
+        if (first == 192 && second == 168) {
+            return true;
+        }
+        return first == 172 && second >= 16 && second <= 31;
     }
 }

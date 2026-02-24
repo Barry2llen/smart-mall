@@ -1,4 +1,4 @@
-package edu.nchu.mall.models.vo;
+package edu.nchu.mall.services.order.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -7,14 +7,12 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-@Schema(description = "购物项视图")
-public class CartItemVO {
+@Schema(description = "订单项视图")
+public class OrderItemVO {
     @Schema(description = "skuId")
     private Long skuId;
     @Schema(description = "spuId")
     private Long spuId;
-    @Schema(description = "是否选中")
-    private Boolean selected = Boolean.TRUE;
     @Schema(description = "标题")
     private String title;
     @Schema(description = "图片")
@@ -25,22 +23,10 @@ public class CartItemVO {
     private BigDecimal price;
     @Schema(description = "数量")
     private Integer count;
-    @Schema(description = "可用库存")
-    private Integer stock;
     @Schema(description = "总价")
     private BigDecimal totalPrice;
-
-    public Boolean getSelected() {
-        return this.getStock() >= this.getCount() && this.selected;
-    }
 
     public BigDecimal getTotalPrice() {
         return this.price.multiply(new BigDecimal(this.count));
     }
-
-    public boolean available() {
-        return this.getStock() >= this.getCount();
-    }
-
-
 }

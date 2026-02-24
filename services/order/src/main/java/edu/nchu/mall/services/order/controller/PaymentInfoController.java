@@ -4,6 +4,7 @@ import edu.nchu.mall.models.entity.PaymentInfo;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.services.order.service.PaymentInfoService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;

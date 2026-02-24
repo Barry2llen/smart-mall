@@ -3,6 +3,7 @@ package edu.nchu.mall.components.feign.ware;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.vo.SkuStockVO;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,5 +17,5 @@ public interface WareFeignClient {
     R<List<SkuStockVO>> getStocksBySkuIds(@RequestBody List<Long> skuIds);
 
     @GetMapping("ware-skus/stock/{skuId}")
-    R<SkuStockVO> getStockBySkuId(@PathVariable Long skuId);
+    @Nullable R<SkuStockVO> getStockBySkuId(@PathVariable Long skuId);
 }

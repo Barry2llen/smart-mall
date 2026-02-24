@@ -5,6 +5,7 @@ import edu.nchu.mall.models.dto.SpuSaveDTO;
 import edu.nchu.mall.models.entity.SpuInfo;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.product.service.SpuInfoService;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 
 @Tag(name = "Spu信息")
@@ -28,6 +30,13 @@ public class SpuInfoController {
 
     @Autowired
     SpuInfoService spuInfoService;
+
+    @Parameters(@Parameter(name = "spuIds", description = "SpuId列表"))
+    @Operation(description = "批量获取Spu信息详情")
+    @GetMapping("/batch")
+    public R<List<SpuInfoVO>> getSpuInfoBatch(Collection<Long> spuIds) {
+        return R.success(spuInfoService.getBatchSpuInfo(spuIds));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "Spu信息主键"))
     @Operation(summary = "获取Spu信息详情")

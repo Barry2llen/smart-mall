@@ -36,6 +36,6 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: edu.nchu.mall.services.auth.controller
+      packages-to-scan: edu.nchu.mall.services.auth.web
 
 

@@ -71,6 +71,13 @@ spring:
             - Path=/cart/**
           filters:
             - RewritePath=/cart/?(?<segment>.*), /$\{segment}
+        - id: order
+          uri:
+            lb://order
+          predicates:
+            - Path=/order/**
+          filters:
+            - RewritePath=/order/?(?<segment>.*), /$\{segment}
 fronted:
   url: localhost
 

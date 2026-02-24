@@ -1,5 +1,6 @@
 package edu.nchu.mall.models.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,4 +17,9 @@ public class SkuStockVO {
 
     @Schema(description = "锁定库存")
     private Integer stockLocked;
+
+    @JsonIgnore
+    public Integer getAvailableStock() {
+        return stock - stockLocked;
+    }
 }

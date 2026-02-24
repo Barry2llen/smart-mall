@@ -6,7 +6,11 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @EnableAsync
-@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+@SpringBootApplication(
+        scanBasePackageClasses = ThirdPartyMainApplication.class,
+        scanBasePackages = "edu.nchu.mall.components.utils",
+        exclude = DataSourceAutoConfiguration.class
+)
 public class ThirdPartyMainApplication {
     public static void main(String[] args) {
         SpringApplication.run(ThirdPartyMainApplication.class, args);

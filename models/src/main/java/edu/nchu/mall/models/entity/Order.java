@@ -6,6 +6,10 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import edu.nchu.mall.models.enums.BillType;
+import edu.nchu.mall.models.enums.OrderSource;
+import edu.nchu.mall.models.enums.OrderStatus;
+import edu.nchu.mall.models.enums.Payment;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -74,16 +78,16 @@ public class Order {
     private BigDecimal discountAmount;
 
     @TableField("pay_type")
-    @Schema(description = "支付方式【1->支付宝；2->微信；3->银联； 4->货到付款；】")
-    private Integer payType;
+    @Schema(description = "支付方式")
+    private Payment payType;
 
     @TableField("source_type")
     @Schema(description = "订单来源[0->PC订单；1->app订单]")
-    private Integer sourceType;
+    private OrderSource sourceType;
 
     @TableField("status")
     @Schema(description = "订单状态【0->待付款；1->待发货；2->已发货；3->已完成；4->已关闭；5->无效订单】")
-    private Integer status;
+    private OrderStatus status;
 
     @TableField("delivery_company")
     @Schema(description = "物流公司(配送方式)")
@@ -107,7 +111,7 @@ public class Order {
 
     @TableField("bill_type")
     @Schema(description = "发票类型[0->不开发票；1->电子发票；2->纸质发票]")
-    private Integer billType;
+    private BillType billType;
 
     @TableField("bill_header")
     @Schema(description = "发票抬头")

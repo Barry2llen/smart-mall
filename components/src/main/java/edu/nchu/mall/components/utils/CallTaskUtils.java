@@ -22,7 +22,7 @@ public class CallTaskUtils{
     @Qualifier(ThreadPoolConfig.VTHREAD_POOL_NAME)
     Executor executor;
 
-    public <T> CompletableFuture<Try<T>> call(Supplier<R<T>> supplier) {
+    public <T> CompletableFuture<Try<T>> rcall(Supplier<R<T>> supplier) {
         return CompletableFuture.supplyAsync(() -> {
             R<T> res = supplier.get();
             if (res.getCode() != RCT.SUCCESS) {
@@ -32,7 +32,11 @@ public class CallTaskUtils{
         }, executor).exceptionally(Try::failure);
     }
 
-    public <T, K> Map<K, CompletableFuture<Try<T>>> call(List<K> ids, Supplier<R<T>>... suppliers) {
+    public <T> CompletableFuture<Try<T>> call(Supplier<T> supplier) {
+        return CompletableFuture.supplyAsync(() -> Try.success(supplier.get()), executor).exceptionally(Try::failure);
+    }
+
+    public <T, K> Map<K, CompletableFuture<Try<T>>> rcall(List<K> ids, Supplier<R<T>>... suppliers) {
         if (ids == null || suppliers == null || ids.size() != suppliers.length) {
             throw new IllegalArgumentException();
         }
@@ -46,6 +50,19 @@ public class CallTaskUtils{
                 }
                 return Try.success(res.getData());
             }, executor).exceptionally(Try::failure);
+            map.put(ids.get(i), each);
+        }
+        return map;
+    }
+
+    public <T, K> Map<K, CompletableFuture<Try<T>>> call(List<K> ids, Supplier<T>... suppliers) {
+        if (ids == null || suppliers == null || ids.size() != suppliers.length) {
+            throw new IllegalArgumentException();
+        }
+        Map<K, CompletableFuture<Try<T>>> map = new HashMap<>(ids.size());
+        for (int i = 0; i < ids.size(); i++) {
+            int finalI = i;
+            CompletableFuture<Try<T>> each = CompletableFuture.supplyAsync(() -> Try.success(suppliers[finalI].get()), executor).exceptionally(Try::failure);
             map.put(ids.get(i), each);
         }
         return map;

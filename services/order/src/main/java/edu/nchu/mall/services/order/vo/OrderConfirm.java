@@ -1,7 +1,6 @@
 package edu.nchu.mall.services.order.vo;
 
 import edu.nchu.mall.models.entity.MemberReceiveAddress;
-import edu.nchu.mall.models.vo.CartItemVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -16,7 +15,7 @@ public class OrderConfirm {
     private List<MemberReceiveAddress> addresses;
 
     @Schema(description = "订单项列表")
-    private List<CartItemVO> items;
+    private List<OrderItemVO> items;
 
     @Schema(description = "获得积分")
     private Integer points;
@@ -34,7 +33,7 @@ public class OrderConfirm {
     public BigDecimal getTotal() {
         if (items == null || items.isEmpty()) return BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
-        for (CartItemVO item : items) {
+        for (var item : items) {
             total = total.add(item.getTotalPrice());
         }
         return total;
@@ -47,4 +46,7 @@ public class OrderConfirm {
         // TODO 计算优惠
         return getTotal();
     }
+
+    @Schema(description = "防重令牌")
+    private String token;
 }

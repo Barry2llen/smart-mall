@@ -33,6 +33,23 @@ public class MemberReceiveAddressController {
     MemberReceiveAddressService memberReceiveAddressService;
 
     @Parameters({
+            @Parameter(name = "sid", description = "会员收货地址主键"),
+            @Parameter(name = "memberId", description = "会员ID")
+    })
+    @Operation(summary = "获取会员收货地址")
+    @GetMapping("/{sid}/{memberId}")
+    public R<MemberReceiveAddress> getMemberReceiveAddress(@PathVariable @NotNull Long sid, @PathVariable @NotNull Long memberId) {
+        MemberReceiveAddress memberReceiveAddress = memberReceiveAddressService.getById(sid);
+        if (memberReceiveAddress == null) {
+            return R.fail("member receive address not found");
+        }
+        if (!memberReceiveAddress.getMemberId().equals(memberId)) {
+            return R.fail("member receive address not found");
+        }
+        return R.success(memberReceiveAddress);
+    }
+
+    @Parameters({
             @Parameter(name = "dto", description = "更新的会员收货地址信息")
     })
     @Operation(summary = "更新会员收货地址")

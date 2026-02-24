@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -82,9 +83,11 @@ public class CartServiceImpl implements CartService {
 
         List<Long> ids = items.stream().map(CartItem::getSkuId).toList();
 
-        var voTask = callTaskUtils.call(() -> productFeignClient.getBatch(ids));
+        var voTask = callTaskUtils.rcall(() -> productFeignClient.getBatch(ids));
 
-        var attrTask = callTaskUtils.call(() -> productFeignClient.getBatchSkuAttrValues(ids));
+        var attrTask = callTaskUtils.rcall(() -> productFeignClient.getBatchSkuAttrValues(ids));
+
+        var stockTask = callTaskUtils.rcall(() -> wareFeignClient.getStocksBySkuIds(ids));
 
         if (!Try.allSucceeded(voTask.join(), attrTask.join())) {
             throw new CustomException("获取商品信息失败");
@@ -92,7 +95,13 @@ public class CartServiceImpl implements CartService {
 
         Map<Long, SkuInfoVO> infos = voTask.join().getValue();
         Map<Long, List<String>> attrs = attrTask.join().getValue();
-        List<CartItemVO> vos = items.stream().map(item -> {
+        Map<Long, SkuStockVO> stocks = stockTask.join().getValue().stream().collect(Collectors.toMap(SkuStockVO::getSkuId, v -> v));
+
+        if (infos.size() != items.size()) {
+            throw new CustomException("获取商品信息失败");
+        }
+
+        List<CartItemVO> vos = items.stream().filter(item -> stocks.containsKey(item.getSkuId())).map(item -> {
             CartItemVO vo = new CartItemVO();
             BeanUtils.copyProperties(item, vo);
             SkuInfoVO info = infos.get(item.getSkuId());
@@ -101,6 +110,7 @@ public class CartServiceImpl implements CartService {
             vo.setTitle(info.getSkuTitle());
             vo.setImage(info.getSkuDefaultImg());
             vo.setPrice(info.getPrice());
+            vo.setStock(stocks.get(item.getSkuId()).getAvailableStock());
             vo.setSkuAttr(attrs.get(info.getSkuId()));
             return vo;
         }).toList();
@@ -144,14 +154,28 @@ public class CartServiceImpl implements CartService {
             return Status.SUCCESS;
         }
 
-        var existTask = callTaskUtils.call(() -> productFeignClient.getSkuInfo(String.valueOf(dto.getSkuId())));
+        var existTask = callTaskUtils.rcall(() -> productFeignClient.getSkuInfo(String.valueOf(dto.getSkuId())));
 
-        var stockTask = callTaskUtils.call(() -> wareFeignClient.getStockBySkuId(dto.getSkuId()));
+        var stockTask = callTaskUtils.rcall(() -> wareFeignClient.getStockBySkuId(dto.getSkuId()));
 
         CompletableFuture.allOf(existTask, stockTask).join();
 
-        if (!Try.allSucceeded(existTask.join(), stockTask.join())) {
+        var existTry = existTask.join();
+        var stockTry = stockTask.join();
+
+        if (!Try.allSucceeded(existTry, stockTry)) {
             return Status.ERROR;
+        }
+
+        SkuInfoVO info = existTry.getValue();
+        SkuStockVO stock = stockTry.getValue();
+
+        if (info == null || info.getSkuId() == null || !info.getSkuId().equals(dto.getSkuId())) {
+            return Status.ERROR;
+        }
+
+        if (stock == null || stock.getAvailableStock() < dto.getCount()) {
+            return Status.SKU_NOT_ENOUGH;
         }
 
         CartItem cartItem = new CartItem();
@@ -173,12 +197,12 @@ public class CartServiceImpl implements CartService {
         final String hashKey = String.valueOf(skuId);
 
         Boolean existed = redisTemplate.opsForHash().hasKey(key, hashKey);
-        if (!Boolean.TRUE.equals(existed)) {
+        if (!existed) {
             return Status.CART_ITEM_NOT_FOUND;
         }
 
         Long removed = redisTemplate.opsForHash().delete(key, hashKey);
-        return removed != null && removed > 0 ? Status.SUCCESS : Status.ERROR;
+        return removed > 0 ? Status.SUCCESS : Status.ERROR;
     }
 
     @Override

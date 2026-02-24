@@ -2,6 +2,7 @@ package edu.nchu.mall.components.feign.product;
 
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.vo.SkuInfoVO;
+import edu.nchu.mall.models.vo.SpuInfoVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,4 +26,7 @@ public interface ProductFeignClient {
 
     @PostMapping("/sku-sale-attr-values/sku/batch")
     R<Map<Long, List<String>>> getBatchSkuAttrValues(@RequestParam List<Long> skuIds);
+
+    @GetMapping("/spu-infos/batch")
+    R<List<SpuInfoVO>> getSpuInfoBatch(Collection<Long> spuIds);
 }

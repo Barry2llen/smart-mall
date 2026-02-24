@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +25,7 @@ public class OrderItem {
     @Schema(description = "id")
     private Long id;
 
+    @JsonIgnore
     @TableField("order_id")
     @Schema(description = "order_id")
     private Long orderId;
@@ -37,9 +39,10 @@ public class OrderItem {
     private Long spuId;
 
     @TableField("spu_name")
-    @Schema(description = "spu_name")
+    @Schema(description = "spu名")
     private String spuName;
 
+    @JsonIgnore
     @TableField("spu_pic")
     @Schema(description = "spu_pic")
     private String spuPic;
@@ -73,24 +76,44 @@ public class OrderItem {
     private Integer skuQuantity;
 
     @TableField("sku_attrs_vals")
-    @Schema(description = "商品销售属性组合（JSON）")
+    @Schema(description = "商品销售属性组合（'/'分隔）")
     private String skuAttrsVals;
 
     @TableField("promotion_amount")
     @Schema(description = "商品促销分解金额")
     private BigDecimal promotionAmount;
 
+    public BigDecimal getPromotionAmount() {
+        // TODO ...
+        return BigDecimal.ZERO;
+    }
+
     @TableField("coupon_amount")
     @Schema(description = "优惠券优惠分解金额")
     private BigDecimal couponAmount;
+
+    public BigDecimal getCouponAmount() {
+        // TODO ...
+        return BigDecimal.ZERO;
+    }
 
     @TableField("integration_amount")
     @Schema(description = "积分优惠分解金额")
     private BigDecimal integrationAmount;
 
+    public BigDecimal getIntegrationAmount() {
+        // TODO ...
+        return BigDecimal.ZERO;
+    }
+
     @TableField("real_amount")
     @Schema(description = "该商品经过优惠后的分解金额")
     private BigDecimal realAmount;
+
+    public BigDecimal getRealAmount() {
+        // TODO ...
+        return this.getSkuPrice();
+    }
 
     @TableField("gift_integration")
     @Schema(description = "赠送积分")

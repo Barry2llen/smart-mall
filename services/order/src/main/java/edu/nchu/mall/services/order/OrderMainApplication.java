@@ -16,7 +16,8 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableFeignClients(
         basePackages = {
                 "edu.nchu.mall.components.feign.cart",
-                "edu.nchu.mall.components.feign.member"
+                "edu.nchu.mall.components.feign.member",
+                "edu.nchu.mall.components.feign.product"
         },
         basePackageClasses = {OrderMainApplication.class}
 )

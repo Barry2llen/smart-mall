@@ -23,8 +23,8 @@ public class CartWebController {
 
     @Operation(description = "获取购物车")
     @GetMapping
-    public Cart getCart(@UserId Long userId) {
-        return cartService.getCart(userId);
+    public R<Cart> getCart(@UserId Long userId) {
+        return R.success(cartService.getCart(userId));
     }
 
     @Parameters({

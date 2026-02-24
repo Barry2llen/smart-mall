@@ -20,12 +20,15 @@ import edu.nchu.mall.models.entity.*;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.vo.SkuStockVO;
+import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.product.dao.*;
 import edu.nchu.mall.services.product.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -80,6 +83,15 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
 
     @Autowired
     SearchFeignClient searchFeignClient;
+
+    @Autowired
+    CacheManager cacheManager;
+
+    private boolean checkCache(String key) {
+        Cache cache = cacheManager.getCache("spuInfo");
+        return cache != null && cache.get(key) != null;
+    }
+
 
     private void checkResult(boolean res, String msg) {
         if (!res) {
@@ -178,6 +190,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
+            @CacheEvict(key = "'vo:' + #dto.id"),
             @CacheEvict(cacheNames = "spuInfo:list", allEntries = true)
     })
     public boolean updateById(SpuInfoDTO dto) {
@@ -205,8 +218,38 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     }
 
     @Override
+    @Cacheable(key = "'vo:' + #id")
+    public SpuInfoVO getVoById(Serializable id) {
+        return baseMapper.getSpuInfoById(id);
+    }
+
+    @Override
+    public List<SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds) {
+        Cache cache = cacheManager.getCache("spuInfo");
+        List<SpuInfoVO> res = new LinkedList<>();
+        List<Long> nonCachedIds = new LinkedList<>();
+        for (Long id : spuIds) {
+            if (cache != null && checkCache("vo:" + id)) {
+                SpuInfoVO vo = cache.get("vo:" + id, SpuInfoVO.class);
+                res.add(vo);
+            }else nonCachedIds.add(id);
+        }
+        List<SpuInfoVO> infos = baseMapper.getBatchSpuInfoById(nonCachedIds);
+        for (Long id : nonCachedIds) {
+            if (cache != null) {
+                cache.put("vo:" + id, infos.get(nonCachedIds.indexOf(id)));
+            }
+        }
+        if (infos != null && !infos.isEmpty()) {
+            res.addAll(infos);
+        }
+        return res;
+    }
+
+    @Override
     @Caching(evict = {
             @CacheEvict(key = "#id"),
+            @CacheEvict(key = "'vo:' + #id"),
             @CacheEvict(cacheNames = "spuInfo:list", allEntries = true)
     })
     public boolean removeById(Serializable id) {

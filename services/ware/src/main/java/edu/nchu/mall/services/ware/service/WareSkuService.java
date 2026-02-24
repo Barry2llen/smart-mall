@@ -3,6 +3,7 @@ package edu.nchu.mall.services.ware.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.WareSku;
 import edu.nchu.mall.models.vo.SkuStockVO;
+import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
 import java.util.List;
@@ -24,5 +25,5 @@ public interface WareSkuService extends IService<WareSku> {
 
     List<SkuStockVO> getStocksBySkuIds(List<Long> skuIds);
 
-    SkuStockVO getStockBySkuId(Long skuId);
+    @Nullable SkuStockVO getStockBySkuId(Long skuId);
 }

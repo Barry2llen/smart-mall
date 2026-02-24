@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.dto.SpuInfoDTO;
 import edu.nchu.mall.models.dto.SpuSaveDTO;
 import edu.nchu.mall.models.entity.SpuInfo;
+import edu.nchu.mall.models.vo.SpuInfoVO;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 public interface SpuInfoService extends IService<SpuInfo> {
@@ -14,10 +16,14 @@ public interface SpuInfoService extends IService<SpuInfo> {
     @Override
     SpuInfo getById(Serializable id);
 
+    SpuInfoVO getVoById(Serializable id);
+
     @Override
     boolean removeById(Serializable id);
 
     boolean save(SpuSaveDTO dto);
 
     List<SpuInfo> list(Integer pageNum, Integer pageSize, Long catalogId, Long brandId, String key, Integer status);
+
+    List<SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds);
 }

@@ -16,6 +16,9 @@ spring:
         namespace: dev
         file-extension: yaml
       server-addr: 127.0.0.1:8848
+  cache:
+    cache-names:
+      - spuInfo
   datasource:
     url: jdbc:mysql://localhost:3306/order?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
 
@@ -29,4 +32,6 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: edu.nchu.mall.services.order.controller
+      packages-to-scan:
+#        - edu.nchu.mall.services.order.controller
+        - edu.nchu.mall.services.order.web

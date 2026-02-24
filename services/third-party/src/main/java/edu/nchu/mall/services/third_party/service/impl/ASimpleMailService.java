@@ -1,6 +1,7 @@
 package edu.nchu.mall.services.third_party.service.impl;
 
 import edu.nchu.mall.components.exception.CustomException;
+import edu.nchu.mall.components.utils.RedisUtils;
 import edu.nchu.mall.services.third_party.service.SimpleMailService;
 import jakarta.annotation.Resource;
 import jakarta.mail.internet.MimeMessage;
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +32,6 @@ public class ASimpleMailService implements SimpleMailService {
     public static final String LOCK_KEY = "email:lock:";
     public static final short KEEP_TIME_SECONDS = 300;
     public static final short RETRY_TIME_SECONDS = 60;
-    private static final DefaultRedisScript<Long> VALIDATE_AND_DELETE_SCRIPT = createValidateAndDeleteScript();
 
     @Resource
     JavaMailSender mailSender;
@@ -46,6 +44,9 @@ public class ASimpleMailService implements SimpleMailService {
 
     @Autowired
     RedissonClient redissonClient;
+
+    @Autowired
+    RedisUtils redisUtils;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -110,12 +111,7 @@ public class ASimpleMailService implements SimpleMailService {
 
     @Override
     public Boolean validate(Validation validation) {
-        Long result = redisTemplate.execute(
-                VALIDATE_AND_DELETE_SCRIPT,
-                Collections.singletonList(CODE_KEY + validation.getTarget()),
-                validation.getCode()
-        );
-        return Long.valueOf(1L).equals(result);
+        return redisUtils.checkAndDelete(CODE_KEY + validation.getTarget(), validation.getCode());
     }
 
     @Override
@@ -127,25 +123,5 @@ public class ASimpleMailService implements SimpleMailService {
     @Override
     public boolean exists(MailMessage mailMessage) {
         return redisTemplate.opsForValue().get(CODE_KEY + mailMessage.getTo()) != null;
-    }
-
-    private static DefaultRedisScript<Long> createValidateAndDeleteScript() {
-        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
-        script.setResultType(Long.class);
-        script.setScriptText(
-                """
-                        local key = KEYS[1]
-                        local inputCode = ARGV[1]
-                        local storedCode = redis.call('get', key)
-                        if not storedCode then
-                            return 0
-                        end
-                        if storedCode == inputCode then
-                            redis.call('del', key)
-                            return 1
-                        end
-                        return -1"""
-        );
-        return script;
     }
 }
