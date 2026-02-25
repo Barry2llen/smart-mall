@@ -38,7 +38,7 @@ public class MemberController {
     @GetMapping("/{sid}")
     public R<MemberVO> getMember(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) {
         MemberVO data = memberService.getMemberById(Long.parseLong(sid));
-        return new R<>(RCT.SUCCESS, "success", data);
+        return data != null ? R.success(data) : R.fail();
     }
 
     @Parameters({

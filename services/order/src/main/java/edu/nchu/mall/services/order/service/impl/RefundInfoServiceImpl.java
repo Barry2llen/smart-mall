@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "refundInfo")
-@Transactional
 public class RefundInfoServiceImpl extends ServiceImpl<RefundInfoMapper, RefundInfo> implements RefundInfoService {
 
     @Override

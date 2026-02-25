@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "orderItem")
-@Transactional
 public class OrderItemServiceImpl extends ServiceImpl<OrderItemMapper, OrderItem> implements OrderItemService {
 
     @Override

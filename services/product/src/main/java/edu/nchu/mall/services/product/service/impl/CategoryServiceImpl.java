@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "category")
-@Transactional
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
 
     @Autowired

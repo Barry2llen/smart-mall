@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "couponSpuCategoryRelation")
-@Transactional
 public class CouponSpuCategoryRelationServiceImpl extends ServiceImpl<CouponSpuCategoryRelationMapper, CouponSpuCategoryRelation> implements CouponSpuCategoryRelationService {
 
     @Override

@@ -17,7 +17,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "skuImages")
-@Transactional
 public class SkuImagesServiceImpl extends ServiceImpl<SkuImagesMapper, SkuImages> implements SkuImagesService {
 
     @Override

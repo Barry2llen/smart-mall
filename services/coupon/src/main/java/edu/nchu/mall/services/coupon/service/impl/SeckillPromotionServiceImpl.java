@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "seckillPromotion")
-@Transactional
 public class SeckillPromotionServiceImpl extends ServiceImpl<SeckillPromotionMapper, SeckillPromotion> implements SeckillPromotionService {
 
     @Override

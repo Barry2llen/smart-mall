@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "seckillSkuNotice")
-@Transactional
 public class SeckillSkuNoticeServiceImpl extends ServiceImpl<SeckillSkuNoticeMapper, SeckillSkuNotice> implements SeckillSkuNoticeService {
 
     @Override

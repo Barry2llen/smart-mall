@@ -23,7 +23,6 @@ import java.util.Optional;
 
 @Service
 @CacheConfig(cacheNames = "wareInfo")
-@Transactional
 public class WareInfoServiceImpl extends ServiceImpl<WareInfoMapper, WareInfo> implements WareInfoService {
 
     @Override

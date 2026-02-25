@@ -1,8 +1,11 @@
 package edu.nchu.mall.services.ware.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import edu.nchu.mall.models.dto.WareSkuLock;
 import edu.nchu.mall.models.entity.WareSku;
+import edu.nchu.mall.models.vo.SkuLockResult;
 import edu.nchu.mall.models.vo.SkuStockVO;
+import jakarta.validation.Valid;
 import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
@@ -26,4 +29,6 @@ public interface WareSkuService extends IService<WareSku> {
     List<SkuStockVO> getStocksBySkuIds(List<Long> skuIds);
 
     @Nullable SkuStockVO getStockBySkuId(Long skuId);
+
+    boolean lockStock(WareSkuLock lock);
 }

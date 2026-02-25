@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @CacheConfig(cacheNames = "spuInfo")
-@Transactional
 public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> implements SpuInfoService {
 
     @Autowired
@@ -188,6 +187,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
             @CacheEvict(key = "'vo:' + #dto.id"),
@@ -262,6 +262,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     }
 
     @Override
+    @Transactional
     @CacheEvict(cacheNames = "spuInfo:list", allEntries = true)
     public boolean save(SpuSaveDTO dto) {
 

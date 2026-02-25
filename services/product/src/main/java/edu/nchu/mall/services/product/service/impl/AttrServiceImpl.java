@@ -33,7 +33,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "attr")
-@Transactional
 public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements AttrService {
 
     @Autowired
@@ -67,6 +66,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
             @CacheEvict(key = "#dto.attrId"),
             @CacheEvict(value = "attr:page", allEntries = true),
     })
+    @Transactional
     public boolean updateById(AttrDTO dto) {
         var self = (AttrServiceImpl) AopContext.currentProxy();
         Long catlogId = dto.getCatelogId();
@@ -202,6 +202,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrMapper, Attr> implements At
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(key = "#attrId"),
             @CacheEvict(value = "attr:page", allEntries = true),

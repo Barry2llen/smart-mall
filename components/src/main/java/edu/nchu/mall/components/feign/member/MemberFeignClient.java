@@ -4,6 +4,7 @@ import edu.nchu.mall.models.dto.MemberDTO;
 import edu.nchu.mall.models.entity.Member;
 import edu.nchu.mall.models.entity.MemberReceiveAddress;
 import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.models.vo.MemberVO;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.lang.Nullable;
@@ -15,6 +16,9 @@ import java.util.List;
 public interface MemberFeignClient {
     @PostMapping("/members")
     R<?> createMember(@RequestBody MemberDTO dto);
+
+    @GetMapping("/members/{sid}")
+    R<MemberVO> getMember(@PathVariable("sid") @NotNull Long id);
 
     @GetMapping("/members/salt")
     @Nullable

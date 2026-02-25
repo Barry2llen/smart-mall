@@ -17,11 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "skuSaleAttrValue")
-@Transactional
 public class SkuSaleAttrValueServiceImpl extends ServiceImpl<SkuSaleAttrValueMapper, SkuSaleAttrValue> implements SkuSaleAttrValueService {
 
     @Autowired

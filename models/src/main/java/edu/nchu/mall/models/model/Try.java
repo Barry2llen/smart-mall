@@ -4,6 +4,7 @@ import edu.nchu.mall.models.model.pair.Pair;
 
 import java.util.Collection;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Try <T> extends Pair.ImmutablePair<T, Throwable> {
 
@@ -33,6 +34,22 @@ public class Try <T> extends Pair.ImmutablePair<T, Throwable> {
 
     public static <T> Try<T> failure(Throwable ex) {
         return new Try<>(null, ex);
+    }
+
+    public static <T, R> Try<R> of(Function<T, R> func, T value) {
+        try {
+            return Try.success(func.apply(value));
+        } catch (Throwable ex) {
+            return Try.failure(ex);
+        }
+    }
+
+    public static <T> Try<T> of(Supplier<T> supplier) {
+        try {
+            return Try.success(supplier.get());
+        } catch (Throwable ex) {
+            return Try.failure(ex);
+        }
     }
 
     public static boolean all(Function<Try<?>, Boolean> predicate, Try<?>... tries) {

@@ -6,11 +6,15 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.components.utils.KeyUtils;
+import edu.nchu.mall.models.dto.WareSkuLock;
+import edu.nchu.mall.models.entity.MemberReceiveAddress;
 import edu.nchu.mall.models.entity.WareSku;
 import edu.nchu.mall.models.vo.SkuStockVO;
+import edu.nchu.mall.services.ware.dao.WareInfoMapper;
 import edu.nchu.mall.services.ware.dao.WareSkuMapper;
 import edu.nchu.mall.services.ware.service.WareSkuService;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,11 +27,18 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "wareSku")
-@Transactional
 public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> implements WareSkuService {
 
-    private Integer nullOr0(Integer i) {
-        return i == null ? 0 : i;
+    @Autowired
+    WareInfoMapper wareInfoMapper;
+
+    private Long determineWare(MemberReceiveAddress address) {
+        // TODO ...
+        return wareInfoMapper.selectOne(null).getId();
+    }
+
+    private boolean lockStock(Long wareId, Long skuId, Integer num) {
+        return baseMapper.lockStock(wareId, skuId, num) > 0;
     }
 
     @Override
@@ -85,6 +96,22 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> impl
     @Override
     public SkuStockVO getStockBySkuId(Long skuId) {
         return baseMapper.getStockBySkuId(skuId);
+    }
+
+    @Override
+    @Transactional
+    public boolean lockStock(WareSkuLock lock) {
+
+        Long wareId = determineWare(lock.getAddress());
+
+        for (var item : lock.getItems()) {
+            boolean res = lockStock(item.getSkuId(), wareId, item.getNum());
+            if (!res) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Cacheable(cacheNames = "wareSku:list", key = "#pageNum + ':' + #pageSize")

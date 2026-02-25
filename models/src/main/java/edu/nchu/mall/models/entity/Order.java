@@ -93,9 +93,19 @@ public class Order {
     @Schema(description = "物流公司(配送方式)")
     private String deliveryCompany;
 
+    public String getDeliveryCompany() {
+        // TODO ...
+        return "顺丰快递";
+    }
+
     @TableField("delivery_sn")
     @Schema(description = "物流单号")
     private String deliverySn;
+
+    public String getDeliverySn() {
+        // TODO ...
+        return "xxxxx-xxxxx-xxxxx-xxxxx";
+    }
 
     @TableField("auto_confirm_day")
     @Schema(description = "自动确认时间（天）")
@@ -113,21 +123,46 @@ public class Order {
     @Schema(description = "发票类型[0->不开发票；1->电子发票；2->纸质发票]")
     private BillType billType;
 
+    public BillType getBillType() {
+        // TODO ...
+        return BillType.NONE;
+    }
+
     @TableField("bill_header")
     @Schema(description = "发票抬头")
     private String billHeader;
+
+    public String getBillHeader() {
+        // TODO ...
+        return "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    }
 
     @TableField("bill_content")
     @Schema(description = "发票内容")
     private String billContent;
 
+    public String getBillContent() {
+        // TODO ...
+        return "xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    }
+
     @TableField("bill_receiver_phone")
     @Schema(description = "收票人电话")
     private String billReceiverPhone;
 
+    public String getBillReceiverPhone() {
+        // TODO ...
+        return "13464782256";
+    }
+
     @TableField("bill_receiver_email")
     @Schema(description = "收票人邮箱")
     private String billReceiverEmail;
+
+    public String getBillReceiverEmail() {
+        // TODO ...
+        return "sample@test.email";
+    }
 
     @TableField("receiver_name")
     @Schema(description = "收货人姓名")
@@ -172,6 +207,11 @@ public class Order {
     @TableField("use_integration")
     @Schema(description = "下单时使用的积分")
     private Integer useIntegration;
+
+    public Integer getUseIntegration() {
+        // TODO ...
+        return 0;
+    }
 
     @TableField("payment_time")
     @Schema(description = "支付时间")

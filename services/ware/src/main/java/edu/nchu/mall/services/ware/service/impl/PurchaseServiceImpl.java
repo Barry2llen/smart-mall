@@ -28,7 +28,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "purchase")
-@Transactional
 public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> implements PurchaseService {
 
     @Autowired
@@ -92,6 +91,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = "purchase:list", allEntries = true),
             @CacheEvict(cacheNames = "purchaseDetail:list", allEntries = true)

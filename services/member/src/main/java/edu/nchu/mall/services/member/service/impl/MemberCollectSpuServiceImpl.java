@@ -21,7 +21,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "memberCollectSpu")
-@Transactional
 public class MemberCollectSpuServiceImpl extends ServiceImpl<MemberCollectSpuMapper, MemberCollectSpu> implements MemberCollectSpuService {
 
     @Override

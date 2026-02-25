@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "skuLadder")
-@Transactional
 public class SkuLadderServiceImpl extends ServiceImpl<SkuLadderMapper, SkuLadder> implements SkuLadderService {
 
     @Override

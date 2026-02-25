@@ -29,7 +29,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "member")
-@Transactional
 public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> implements MemberService {
 
     @Autowired
@@ -75,6 +74,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(key = "'list'"),
             @CacheEvict(key = "#dto.email")

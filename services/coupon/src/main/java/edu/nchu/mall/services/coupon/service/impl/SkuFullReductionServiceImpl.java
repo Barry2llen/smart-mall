@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "skuFullReduction")
-@Transactional
 public class SkuFullReductionServiceImpl extends ServiceImpl<SkuFullReductionMapper, SkuFullReduction> implements SkuFullReductionService {
 
     @Autowired
@@ -54,6 +53,7 @@ public class SkuFullReductionServiceImpl extends ServiceImpl<SkuFullReductionMap
     }
 
     @Override
+    @Transactional
     public boolean saveSkuReduction(SkuReductionDTO dto) {
         SkuLadder ladder = new SkuLadder();
         ladder.setSkuId(dto.getSkuId());

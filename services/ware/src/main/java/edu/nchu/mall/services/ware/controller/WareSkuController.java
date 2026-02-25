@@ -1,10 +1,12 @@
 package edu.nchu.mall.services.ware.controller;
 
 import edu.nchu.mall.models.annotation.validation.NotNullCollection;
+import edu.nchu.mall.models.dto.WareSkuLock;
 import edu.nchu.mall.models.entity.WareSku;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.validation.Groups;
+import edu.nchu.mall.models.vo.SkuLockResult;
 import edu.nchu.mall.models.vo.SkuStockVO;
 import edu.nchu.mall.services.ware.service.WareSkuService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +31,13 @@ public class WareSkuController {
 
     @Autowired
     WareSkuService wareSkuService;
+
+    @Parameters(@Parameter(name = "lock", description = "锁定库存信息"))
+    @Operation(description = "锁定库存")
+    @PostMapping("/lock")
+    public R<?> lockStock(@RequestBody @Valid WareSkuLock lock) {
+        return R.result(wareSkuService.lockStock(lock));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "sku库存主键"))
     @Operation(summary = "获取sku库存详情")

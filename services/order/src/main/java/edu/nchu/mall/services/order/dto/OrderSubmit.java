@@ -1,10 +1,10 @@
 package edu.nchu.mall.services.order.dto;
 
-import edu.nchu.mall.models.annotation.validation.NotNullCollection;
 import edu.nchu.mall.models.enums.Payment;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 
@@ -23,7 +23,7 @@ public class OrderSubmit {
     @NotNull
     @Schema(description = "订单确认页的总价（用于验价）")
     private BigDecimal price;
-    @NotNullCollection
+    @Nullable
     @Schema(description = "备注")
     private String notes;
 }

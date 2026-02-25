@@ -21,7 +21,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "memberLevel")
-@Transactional
 public class MemberLevelServiceImpl extends ServiceImpl<MemberLevelMapper, MemberLevel> implements MemberLevelService {
 
     @Override

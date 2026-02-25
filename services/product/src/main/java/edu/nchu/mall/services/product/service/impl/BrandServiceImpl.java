@@ -26,15 +26,14 @@ import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "brand")
-@Transactional
 public class BrandServiceImpl extends ServiceImpl<BrandMapper, Brand> implements BrandService {
 
     @Autowired
     CategoryBrandRelationService categoryBrandRelationService;
 
     @Override
+    @Transactional
     @Caching(evict = {
-
             @CacheEvict(key = "#entity.brandId"),
             @CacheEvict(value = "brand:list", allEntries = true)
     })

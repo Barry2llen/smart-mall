@@ -21,7 +21,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "memberCollectSubject")
-@Transactional
 public class MemberCollectSubjectServiceImpl extends ServiceImpl<MemberCollectSubjectMapper, MemberCollectSubject> implements MemberCollectSubjectService {
 
     @Override

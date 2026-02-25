@@ -1,5 +1,6 @@
 package edu.nchu.mall.components.feign.ware;
 
+import edu.nchu.mall.models.dto.WareSkuLock;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.vo.SkuStockVO;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -18,4 +19,7 @@ public interface WareFeignClient {
 
     @GetMapping("ware-skus/stock/{skuId}")
     @Nullable R<SkuStockVO> getStockBySkuId(@PathVariable Long skuId);
+
+    @PostMapping("ware-skus/lock")
+    R<?> lockStock(@RequestBody WareSkuLock lock);
 }

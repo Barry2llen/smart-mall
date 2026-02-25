@@ -27,7 +27,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "categoryBrandRelation")
-@Transactional
 public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandRelationMapper, CategoryBrandRelation> implements CategoryBrandRelationService {
 
     @Autowired

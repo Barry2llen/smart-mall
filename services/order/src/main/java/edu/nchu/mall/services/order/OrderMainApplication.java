@@ -17,7 +17,8 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
         basePackages = {
                 "edu.nchu.mall.components.feign.cart",
                 "edu.nchu.mall.components.feign.member",
-                "edu.nchu.mall.components.feign.product"
+                "edu.nchu.mall.components.feign.product",
+                "edu.nchu.mall.components.feign.ware"
         },
         basePackageClasses = {OrderMainApplication.class}
 )

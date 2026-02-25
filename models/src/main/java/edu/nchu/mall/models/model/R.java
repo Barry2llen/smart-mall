@@ -45,6 +45,10 @@ public class R<T>{
         return new R<>(RCT.FAIL, "failure", null);
     }
 
+    public static boolean succeeded(R<?> r) {
+        return RCT.SUCCESS == r.code;
+    }
+
     public static R<?> result(boolean res) {
         return res ? R.success() : R.fail();
     }

@@ -21,7 +21,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "memberLoginLog")
-@Transactional
 public class MemberLoginLogServiceImpl extends ServiceImpl<MemberLoginLogMapper, MemberLoginLog> implements MemberLoginLogService {
 
     @Override

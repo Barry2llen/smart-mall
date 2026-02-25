@@ -13,6 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Data
 @AllArgsConstructor
@@ -112,14 +113,22 @@ public class OrderItem {
 
     public BigDecimal getRealAmount() {
         // TODO ...
-        return this.getSkuPrice();
+        return this.getSkuPrice().multiply(BigDecimal.valueOf(skuQuantity)).subtract(getPromotionAmount()).subtract(getCouponAmount()).subtract(getIntegrationAmount());
     }
 
     @TableField("gift_integration")
     @Schema(description = "赠送积分")
     private Integer giftIntegration;
 
+    public Integer getGiftIntegration() {
+        return getSkuPrice().multiply(BigDecimal.valueOf(skuQuantity)).multiply(BigDecimal.valueOf(10)).setScale(0, RoundingMode.HALF_UP).intValue();
+    }
+
     @TableField("gift_growth")
     @Schema(description = "赠送成长值")
     private Integer giftGrowth;
+
+    public Integer getGiftGrowth() {
+        return getSkuPrice().multiply(BigDecimal.valueOf(skuQuantity)).multiply(BigDecimal.valueOf(0.1)).setScale(0, RoundingMode.HALF_UP).intValue();
+    }
 }

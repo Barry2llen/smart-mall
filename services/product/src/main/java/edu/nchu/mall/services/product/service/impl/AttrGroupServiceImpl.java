@@ -32,7 +32,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "attrGroup")
-@Transactional
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup> implements AttrGroupService {
 
     @Autowired
@@ -91,6 +90,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupMapper, AttrGroup
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(value = "attrGroup:page", allEntries = true)
     })

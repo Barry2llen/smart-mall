@@ -21,7 +21,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "growthChangeHistory")
-@Transactional
 public class GrowthChangeHistoryServiceImpl extends ServiceImpl<GrowthChangeHistoryMapper, GrowthChangeHistory> implements GrowthChangeHistoryService {
 
     @Override

@@ -15,7 +15,6 @@ import java.util.Collection;
 
 @Service
 @CacheConfig(cacheNames = "spuImages")
-@Transactional
 public class SpuImagesServiceImpl extends ServiceImpl<SpuImagesMapper, SpuImages> implements SpuImagesService {
 
     @Override

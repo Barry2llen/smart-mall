@@ -10,14 +10,6 @@ import lombok.Getter;
 import java.io.Serializable;
 
 public interface OrderService extends IService<Order> {
-    @Override
-    boolean updateById(Order entity);
-
-    @Override
-    Order getById(Serializable id);
-
-    @Override
-    boolean removeById(Serializable id);
 
     OrderConfirm confirmOrder(Long memberId);
 

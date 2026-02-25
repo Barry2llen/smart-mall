@@ -15,7 +15,6 @@ import java.io.Serializable;
 
 @Service
 @CacheConfig(cacheNames = "user")
-@Transactional
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Override

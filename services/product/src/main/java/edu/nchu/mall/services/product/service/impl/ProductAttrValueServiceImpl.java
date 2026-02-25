@@ -15,7 +15,6 @@ import java.util.Collection;
 
 @Service
 @CacheConfig(cacheNames = "productAttrValue")
-@Transactional
 public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueMapper, ProductAttrValue> implements ProductAttrValueService {
 
     @Override

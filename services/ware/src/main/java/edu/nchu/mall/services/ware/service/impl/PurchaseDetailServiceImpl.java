@@ -22,7 +22,6 @@ import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "purchaseDetail")
-@Transactional
 public class PurchaseDetailServiceImpl extends ServiceImpl<PurchaseDetailMapper, PurchaseDetail> implements PurchaseDetailService {
 
     @Override
