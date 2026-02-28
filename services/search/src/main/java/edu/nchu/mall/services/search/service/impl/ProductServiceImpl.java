@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import co.elastic.clients.elasticsearch._types.aggregations.LongTermsBucket;
 import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
+import com.rabbitmq.client.Channel;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.utils.KeyUtils;
 import edu.nchu.mall.services.search.document.Product;
@@ -12,6 +13,10 @@ import edu.nchu.mall.services.search.dto.ProductSearchResult;
 import edu.nchu.mall.services.search.repository.ProductRepository;
 import edu.nchu.mall.services.search.service.ProductService;
 import edu.nchu.mall.services.search.utils.QueryUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchAggregation;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchAggregations;
@@ -21,20 +26,30 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.handler.annotation.Headers;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
+@RabbitListener(queues = "product.spu.elastic")
 public class ProductServiceImpl implements ProductService {
     @Autowired
     ElasticsearchOperations elasticsearchOperations;
 
     @Autowired
     ProductRepository repository;
+
+    @RabbitHandler(isDefault = true)
+    public void handleUnknown(Object msg) {
+        log.error("未知的消息类型: {}", msg);
+    }
 
     @Override
     public void save(Product product) {
@@ -46,6 +61,13 @@ public class ProductServiceImpl implements ProductService {
         repository.saveAll(products);
     }
 
+    @RabbitHandler
+    public void saveAll(@Payload Iterable<Product> products, Channel channel, Message message) throws IOException {
+        log.info("收到消息，写入Elasticsearch...");
+        repository.saveAll(products);
+        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+    }
+
     @Override
     public void deleteById(String id) {
         repository.deleteById(id);
@@ -55,6 +77,8 @@ public class ProductServiceImpl implements ProductService {
     public void deleteAll(Iterable<String> ids) {
         repository.deleteAllById(ids);
     }
+
+
 
     @Override
     public ProductSearchResult search(ProductSearchParam param) {

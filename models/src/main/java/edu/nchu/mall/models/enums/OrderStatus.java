@@ -1,11 +1,12 @@
 package edu.nchu.mall.models.enums;
 
+import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 @Schema(description = "订单状态")
-public enum OrderStatus {
+public enum OrderStatus implements IEnum<Integer> {
     // 【0->待付款；1->待发货；2->已发货；3->已完成；4->已关闭；5->无效订单】
     @Schema(description = "待付款")
     UNPAID(0),
@@ -20,10 +21,14 @@ public enum OrderStatus {
     @Schema(description = "无效订单")
     INVALID(5);
 
-    @Getter
-    @JsonValue
     private final int value;
     OrderStatus(int value) {
         this.value = value;
+    }
+
+    @Override
+    @JsonValue
+    public Integer getValue() {
+        return value;
     }
 }

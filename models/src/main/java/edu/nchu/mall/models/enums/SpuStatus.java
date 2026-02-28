@@ -1,4 +1,4 @@
-package edu.nchu.mall.models.constants;
+package edu.nchu.mall.models.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;

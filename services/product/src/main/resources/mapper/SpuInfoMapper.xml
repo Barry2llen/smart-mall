@@ -20,21 +20,20 @@
     </select>
     <select id="getBatchSpuInfoById" resultType="edu.nchu.mall.models.vo.SpuInfoVO">
         SELECT
-            id AS spu_id,
-            spu_name,
-            catalog_id,
+            spu.id AS spu_id,
+            spu.spu_name AS spu_name,
+            spu.catalog_id AS catalog_id,
             cat.name AS catalog_name,
             brand.brand_id AS brand_id,
             brand.name AS brand_name
         FROM
-            pms_brand brand LEFT OUTER JOIN
-                pms_category cat LEFT OUTER JOIN pms_spu_info spu
-                ON cat.cat_id = spu.catalog_id
-            N brand.brand_id = spu.brand_id
+            pms_spu_info spu
+            LEFT JOIN pms_category cat ON spu.catalog_id = cat.cat_id
+            LEFT JOIN pms_brand brand ON spu.brand_id = brand.brand_id
         WHERE
             spu.id IN
-        <foreach item="item" collection="ids" separator="," open="(" close=")">
-            #{item}
-        </foreach>
+            <foreach item="item" collection="ids" separator="," open="(" close=")">
+                #{item}
+            </foreach>
     </select>
 </mapper>

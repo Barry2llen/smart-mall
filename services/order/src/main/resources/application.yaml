@@ -8,6 +8,8 @@ spring:
       - nacos:commons-mysql?group=commons
       - nacos:commons-redis?group=commons
       - nacos:commons-redis-cache?group=commons
+      - nacos:commons-feign?group=commons
+#      - nacos:commons-seata?group=commons
       - nacos:commons?group=commons
       - nacos:rabbit?group=mq
   cloud:
@@ -35,3 +37,8 @@ springdoc:
       packages-to-scan:
 #        - edu.nchu.mall.services.order.controller
         - edu.nchu.mall.services.order.web
+
+#logging:
+#  level:
+#    edu.nchu.mall.components.feign: DEBUG
+

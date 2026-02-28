@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Spu信息")
 @Slf4j
@@ -33,8 +34,8 @@ public class SpuInfoController {
 
     @Parameters(@Parameter(name = "spuIds", description = "SpuId列表"))
     @Operation(description = "批量获取Spu信息详情")
-    @GetMapping("/batch")
-    public R<List<SpuInfoVO>> getSpuInfoBatch(Collection<Long> spuIds) {
+    @PostMapping("/batch")
+    public R<Map<Long, SpuInfoVO>> getSpuInfoBatch(@RequestBody Collection<Long> spuIds) {
         return R.success(spuInfoService.getBatchSpuInfo(spuIds));
     }
 

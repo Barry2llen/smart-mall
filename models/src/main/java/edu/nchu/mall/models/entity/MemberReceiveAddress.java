@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -61,4 +62,10 @@ public class MemberReceiveAddress {
     @TableField("default_status")
     @Schema(description = "是否默认")
     private Integer defaultStatus;
+
+    @JsonIgnore
+    public String getComposedAddress() {
+        return province + city + region + detailAddress;
+    }
+
 }

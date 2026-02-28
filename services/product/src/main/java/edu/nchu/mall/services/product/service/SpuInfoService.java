@@ -9,6 +9,7 @@ import edu.nchu.mall.models.vo.SpuInfoVO;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface SpuInfoService extends IService<SpuInfo> {
     boolean updateById(SpuInfoDTO dto);
@@ -25,5 +26,5 @@ public interface SpuInfoService extends IService<SpuInfo> {
 
     List<SpuInfo> list(Integer pageNum, Integer pageSize, Long catalogId, Long brandId, String key, Integer status);
 
-    List<SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds);
+    Map<Long, SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds);
 }

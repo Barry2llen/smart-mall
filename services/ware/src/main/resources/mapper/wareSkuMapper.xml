@@ -9,6 +9,13 @@
             ware_id = #{wareId} AND
             stock >= stock_locked + #{num};
     </update>
+    <update id="unlockStock">
+        UPDATE ware.wms_ware_sku
+        SET stock_locked = stock_locked - #{num} AND lock_status = #{status}
+        WHERE
+            ware_id = #{wareId} AND
+            sku_id = #{skuId}
+    </update>
     <!--  查询库存 -->
     <select id="getStockBySkuIds" resultType="edu.nchu.mall.models.vo.SkuStockVO">
         SELECT

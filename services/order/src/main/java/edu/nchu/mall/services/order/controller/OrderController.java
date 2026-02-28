@@ -28,11 +28,20 @@ public class OrderController {
             @Parameter(name = "id", description = "订单ID")
     )
     @Operation(summary = "获取订单信息")
-    @GetMapping("/{sid}")
-    public R<?> getOrder(@PathVariable @Length(max = 20, min = 1) @Pattern(regexp = "^[0-9]*$") String sid) throws NumberFormatException {
-        Long id = Long.parseLong(sid);
+    @GetMapping("/{id}")
+    public R<?> getOrder(@PathVariable Long id) {
         Order order = orderService.getById(id);
-        return new R<>(RCT.SUCCESS, "success", order);
+        return order == null ? R.fail("order not found") : R.success(order);
+    }
+
+    @Parameters(
+            @Parameter(name = "id", description = "订单ID")
+    )
+    @Operation(summary = "获取订单信息")
+    @GetMapping("/sn/{sn}")
+    public R<?> getOrder(@PathVariable String sn) {
+        Order order = orderService.getBySn(sn);
+        return order == null ? R.fail("order not found") : R.success(order);
     }
 
     @Parameters({

@@ -24,6 +24,10 @@
         <module>cart</module>
     </modules>
 
+    <properties>
+        <seata.version>2.6.0</seata.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

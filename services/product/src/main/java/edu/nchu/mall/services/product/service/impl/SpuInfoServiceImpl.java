@@ -2,15 +2,15 @@ package edu.nchu.mall.services.product.service.impl;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.coupon.CouponFeignClient;
-import edu.nchu.mall.components.feign.search.SearchFeignClient;
 import edu.nchu.mall.components.feign.ware.WareFeignClient;
-import edu.nchu.mall.models.constants.SpuStatus;
+import edu.nchu.mall.models.enums.SpuStatus;
 import edu.nchu.mall.models.document.EsProduct;
 import edu.nchu.mall.models.dto.BoundsDTO;
 import edu.nchu.mall.models.dto.SkuReductionDTO;
@@ -24,6 +24,7 @@ import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.product.dao.*;
 import edu.nchu.mall.services.product.service.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,10 +82,10 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     WareFeignClient wareFeignClient;
 
     @Autowired
-    SearchFeignClient searchFeignClient;
+    CacheManager cacheManager;
 
     @Autowired
-    CacheManager cacheManager;
+    RabbitTemplate rabbitTemplate;
 
     private boolean checkCache(String key) {
         Cache cache = cacheManager.getCache("spuInfo");
@@ -169,8 +170,17 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         }
 
         // 保存到 Elasticsearch
-        R<?> r = searchFeignClient.saveProductAll(esProducts);
-        checkResult(r, "保存商品到es出错");
+
+//        R<?> r = searchFeignClient.saveProductAll(esProducts);
+//        checkResult(r, "保存商品到es出错");
+//        return true;
+
+        try {
+            rabbitTemplate.convertAndSend("product.spu", "product.spu.elastic.putonsale", esProducts);
+        } catch (Exception e){
+            return false;
+        }
+
         return true;
     }
 
@@ -180,10 +190,24 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
             throw new CustomException("无法下架没有任何sku的商品", new IllegalArgumentException(), HttpStatus.BAD_REQUEST);
         }
 
-        // TODO(接口幂等) 检查商品是否上架
+        // (接口幂等) 检查商品是否上架
+        var self = (SpuInfoServiceImpl)AopContext.currentProxy();
+        SpuInfo info = self.getById(spuId);
+
+        if (info == null) {
+            throw new CustomException("商品不存在", null, HttpStatus.BAD_REQUEST);
+        }
+
+        LambdaUpdateWrapper<SpuInfo> wrapper = Wrappers.lambdaUpdate();
+        wrapper.eq(SpuInfo::getId, spuId).set(SpuInfo::getPublishStatus, SpuStatus.DOWN.getCode());
+        boolean res = super.update(wrapper);
+
+        if (res) {
+            //rabbitTemplate.convertAndSend();
+            return true;
+        }
 
         return false;
-
     }
 
     @Override
@@ -224,25 +248,34 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     }
 
     @Override
-    public List<SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds) {
+    public Map<Long, SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds) {
         Cache cache = cacheManager.getCache("spuInfo");
-        List<SpuInfoVO> res = new LinkedList<>();
+
+        if (cache == null) throw new CustomException("未初始化缓存");
+
+        Map<Long, SpuInfoVO> res = new HashMap<>();
         List<Long> nonCachedIds = new LinkedList<>();
         for (Long id : spuIds) {
-            if (cache != null && checkCache("vo:" + id)) {
+            if (checkCache("vo:" + id)) {
                 SpuInfoVO vo = cache.get("vo:" + id, SpuInfoVO.class);
-                res.add(vo);
+                res.put(id, vo);
             }else nonCachedIds.add(id);
         }
+
+        if (nonCachedIds.isEmpty()) return res;
+
         List<SpuInfoVO> infos = baseMapper.getBatchSpuInfoById(nonCachedIds);
-        for (Long id : nonCachedIds) {
-            if (cache != null) {
-                cache.put("vo:" + id, infos.get(nonCachedIds.indexOf(id)));
-            }
+
+        if (infos == null) {
+            return res;
         }
-        if (infos != null && !infos.isEmpty()) {
-            res.addAll(infos);
+
+        for (SpuInfoVO info : infos) {
+            Long id = info.getSpuId();
+            res.put(id, info);
+            cache.put("vo:" + id, info);
         }
+
         return res;
     }
 

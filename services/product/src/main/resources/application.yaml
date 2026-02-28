@@ -11,6 +11,8 @@ spring:
       - nacos:commons-redis-cache?group=commons
       - nacos:commons-callback?group=commons
       - nacos:commons?group=commons
+      - nacos:rabbit?group=mq
+#      - nacos:commons-feign?group=commons
   cloud:
     nacos:
       config:

@@ -7,8 +7,10 @@ spring:
     import:
       - nacos:commons-mysql?group=commons
       - nacos:commons-redis?group=commons
+#      - nacos:commons-seata?group=commons
       - nacos:commons-redis-cache?group=commons
       - nacos:commons?group=commons
+      - nacos:rabbit?group=mq
   cloud:
     nacos:
       config:
@@ -29,3 +31,7 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: edu.nchu.mall.services.ware.controller
+
+#logging:
+#  level:
+#    edu.nchu.mall.services.ware: debug

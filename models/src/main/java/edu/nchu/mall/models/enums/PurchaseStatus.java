@@ -1,4 +1,4 @@
-package edu.nchu.mall.models.constants;
+package edu.nchu.mall.models.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

@@ -13,24 +13,5 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 
 @Service
-@CacheConfig(cacheNames = "wareOrderTaskDetail")
 public class WareOrderTaskDetailServiceImpl extends ServiceImpl<WareOrderTaskDetailMapper, WareOrderTaskDetail> implements WareOrderTaskDetailService {
-
-    @Override
-    @CacheEvict(key = "#entity.id")
-    public boolean updateById(WareOrderTaskDetail entity) {
-        return super.updateById(entity);
-    }
-
-    @Override
-    @Cacheable(key = "#id")
-    public WareOrderTaskDetail getById(Serializable id) {
-        return super.getById(id);
-    }
-
-    @Override
-    @CacheEvict(key = "#id")
-    public boolean removeById(Serializable id) {
-        return super.removeById(id);
-    }
 }

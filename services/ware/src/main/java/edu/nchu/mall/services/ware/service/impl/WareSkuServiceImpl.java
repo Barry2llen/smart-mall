@@ -5,14 +5,30 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.rabbitmq.client.Channel;
+import edu.nchu.mall.components.exception.CustomException;
+import edu.nchu.mall.components.feign.order.OrderFeignClient;
 import edu.nchu.mall.components.utils.KeyUtils;
 import edu.nchu.mall.models.dto.WareSkuLock;
-import edu.nchu.mall.models.entity.MemberReceiveAddress;
-import edu.nchu.mall.models.entity.WareSku;
+import edu.nchu.mall.models.dto.mq.StockLocked;
+import edu.nchu.mall.models.entity.*;
+import edu.nchu.mall.models.enums.OrderStatus;
+import edu.nchu.mall.models.enums.WareOrderLockStatus;
+import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.model.Try;
 import edu.nchu.mall.models.vo.SkuStockVO;
 import edu.nchu.mall.services.ware.dao.WareInfoMapper;
 import edu.nchu.mall.services.ware.dao.WareSkuMapper;
+import edu.nchu.mall.services.ware.service.WareOrderTaskDetailService;
+import edu.nchu.mall.services.ware.service.WareOrderTaskService;
 import edu.nchu.mall.services.ware.service.WareSkuService;
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.weaver.ast.Or;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -22,15 +38,32 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 
+@Slf4j
 @Service
+@RabbitListener(queues = "stock.release.queue")
 @CacheConfig(cacheNames = "wareSku")
 public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> implements WareSkuService {
 
     @Autowired
     WareInfoMapper wareInfoMapper;
+
+    @Autowired
+    WareOrderTaskService wareOrderTaskService;
+
+    @Autowired
+    WareOrderTaskDetailService wareOrderTaskDetailService;
+
+    @Autowired
+    RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    OrderFeignClient orderFeignClient;
 
     private Long determineWare(MemberReceiveAddress address) {
         // TODO ...
@@ -40,6 +73,43 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> impl
     private boolean lockStock(Long wareId, Long skuId, Integer num) {
         return baseMapper.lockStock(wareId, skuId, num) > 0;
     }
+
+    @RabbitHandler
+    @Transactional(rollbackFor = Exception.class)
+    public void handleStockRelease(StockLocked stock, Channel channel, Message message) throws IOException {
+        log.info("解锁库存...");
+
+        WareOrderTask task = wareOrderTaskService.getById(stock.getTaskId());
+
+        Order order = null;
+        if (task != null) {
+            var orderTry = Try.of(orderFeignClient::getOrderBySn, task.getOrderSn());
+            if (orderTry.succeeded()) {
+                R<Order> res = orderTry.getFirst();
+                if (res.getCode() == RCT.SUCCESS) {
+                    // -- nullable --
+                    order = orderTry.getValue().getData();
+                }
+            } else {
+                channel.basicReject(message.getMessageProperties().getDeliveryTag(), true);
+            }
+        }
+
+        if (task != null && (order == null || order.getStatus() == OrderStatus.CLOSED)) {
+            LambdaQueryWrapper<WareOrderTaskDetail> qw = Wrappers.lambdaQuery();
+            qw.in(WareOrderTaskDetail::getId, stock.getDetailIds());
+            List<WareOrderTaskDetail> details = wareOrderTaskDetailService.list(qw);
+
+            for (WareOrderTaskDetail detail : details) {
+                Long wareId = detail.getWareId();
+                Long skuId = detail.getSkuId();
+                baseMapper.unlockStock(wareId, skuId, detail.getSkuNum(), WareOrderLockStatus.UNLOCKED.getValue());
+            }
+        }
+
+        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+    }
+
 
     @Override
     @Caching(evict = {
@@ -102,14 +172,35 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuMapper, WareSku> impl
     @Transactional
     public boolean lockStock(WareSkuLock lock) {
 
-        Long wareId = determineWare(lock.getAddress());
+        var address = lock.getAddress();
 
+        Long wareId = determineWare(address);
+
+        // 保存库存锁定任务
+        WareOrderTask task = new WareOrderTask();
+        task.setOrderSn(lock.getOrderSn());
+        task.setCreateTime(LocalDateTime.now());
+        task.setConsignee(address.getName());
+        task.setConsigneeTel(address.getPhone());
+        task.setDeliveryAddress(address.getComposedAddress());
+        task.setWareId(wareId);
+        wareOrderTaskService.save(task);
+
+        List<Long> detailIds = new LinkedList<>();
         for (var item : lock.getItems()) {
-            boolean res = lockStock(item.getSkuId(), wareId, item.getNum());
-            if (!res) {
-                return false;
-            }
+            WareOrderTaskDetail detail = new WareOrderTaskDetail(null, item.getSkuId(), "null", item.getNum(), task.getId(), wareId, WareOrderLockStatus.LOCKED);
+
+            boolean res = lockStock(wareId, item.getSkuId(), item.getNum());
+            if (!res) throw new CustomException("锁定库存失败");
+
+            res = wareOrderTaskDetailService.save(detail);
+            if (!res) throw new CustomException("锁定库存失败");
+
+            detailIds.add(detail.getId());
         }
+
+        StockLocked stockLocked = new StockLocked(task.getId(), detailIds);
+        rabbitTemplate.convertAndSend("stock.event.exchange", "stock.delay", stockLocked);
 
         return true;
     }

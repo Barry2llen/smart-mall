@@ -2,22 +2,20 @@ package edu.nchu.mall.models.enums;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
 
-@Schema(description = "订单来源")
-public enum OrderSource implements IEnum<Integer> {
-    PC(0),
-    APP(1);
+public enum WareOrderLockStatus implements IEnum<Integer> {
+    LOCKED(1),
+    UNLOCKED(2),
+    DELETED(3);
 
     private final int value;
 
-    OrderSource(int value) {
+    WareOrderLockStatus(int value) {
         this.value = value;
     }
 
-    @JsonValue
     @Override
+    @JsonValue
     public Integer getValue() {
         return value;
     }

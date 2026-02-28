@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import edu.nchu.mall.models.enums.WareOrderLockStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,4 +38,12 @@ public class WareOrderTaskDetail {
     @TableField("task_id")
     @Schema(description = "工作单id")
     private Long taskId;
+
+    @TableField("ware_id")
+    @Schema(description = "仓库id")
+    private Long wareId;
+
+    @TableField("lock_status")
+    @Schema(description = "状态:1-已锁定  2-已解锁  3-扣减")
+    private WareOrderLockStatus lockStatus;
 }

@@ -1,8 +1,10 @@
 package edu.nchu.mall.services.order.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import edu.nchu.mall.components.config.ThreadPoolConfig;
+import com.rabbitmq.client.Channel;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.cart.CartFeignClient;
 import edu.nchu.mall.components.feign.member.MemberFeignClient;
@@ -18,44 +20,42 @@ import edu.nchu.mall.models.enums.OrderStatus;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.Try;
 import edu.nchu.mall.models.vo.CartItemVO;
-import edu.nchu.mall.models.vo.SkuLockResult;
 import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.order.constants.RedisConstant;
-import edu.nchu.mall.services.order.dao.OrderItemMapper;
 import edu.nchu.mall.services.order.dao.OrderMapper;
 import edu.nchu.mall.services.order.dto.OrderSubmit;
 import edu.nchu.mall.services.order.exception.StockNotEnoughException;
 import edu.nchu.mall.services.order.service.OrderItemService;
 import edu.nchu.mall.services.order.service.OrderService;
 import edu.nchu.mall.services.order.vo.OrderConfirm;
-import edu.nchu.mall.services.order.dto.OrderCreate;
 import edu.nchu.mall.services.order.vo.OrderItemVO;
+//import org.apache.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @CacheConfig(cacheNames = "order")
+@RabbitListener(queues = "order.release.queue")
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
 
     @Autowired
@@ -80,7 +80,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     RedisUtils redisUtils;
 
     @Autowired
-    OrderItemService orderItemService;;
+    OrderItemService orderItemService;
+
+    @RabbitHandler
+    public void release(Order order, Channel channel, Message message) throws IOException {
+        log.info("取消订单{}，准备发送消息给库存系统", order.getOrderSn());
+        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+    }
+
+    @Override
+    public Order getBySn(String sn) {
+        LambdaQueryWrapper<Order> qw = Wrappers.lambdaQuery();
+        qw.eq(Order::getOrderSn, sn);
+        return getOne(qw);
+    }
 
     @Override
     public OrderConfirm confirmOrder(Long memberId) {
@@ -153,7 +166,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 .filter(CartItemVO::available)
                 .toList();
         List<Long> ids = cartItems.stream()
-                .map(CartItemVO::getSkuId).toList();
+                .map(CartItemVO::getSpuId).toList();
 
         // 购物项为空
         if (cartItems.isEmpty()) {
@@ -168,7 +181,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return OrderSubmitStatus.ERROR;
         }
 
-        var spuMap = spuInfos.stream().collect(Collectors.toMap(SpuInfoVO::getSpuId, spu -> spu));
+        var spuMap = spuTask.join().getValue();
 
         // spu信息不匹配
         if (cartItems.stream().anyMatch(item -> !spuMap.containsKey(item.getSpuId()))) {
@@ -199,6 +212,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     }
 
+    //@GlobalTransactional
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     public void saveOrder(Order order, MemberReceiveAddress address, List<OrderItem> items) {
         order.setModifyTime(LocalDateTime.now());
@@ -216,6 +230,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         } else if (!R.succeeded(lockTry.getValue())) {
             throw new StockNotEnoughException("库存不足");
         }
+
+        int i = 1/0;
     }
 
     private Order createOrder(Long memberId, String username, String order_sn, OrderSubmit orderSubmit, MemberReceiveAddress address, List<OrderItem> items) {

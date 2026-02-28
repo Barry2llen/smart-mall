@@ -78,6 +78,12 @@ spring:
             - Path=/order/**
           filters:
             - RewritePath=/order/?(?<segment>.*), /$\{segment}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.http.server.reactive: DEBUG
+
 fronted:
   url: localhost
 
