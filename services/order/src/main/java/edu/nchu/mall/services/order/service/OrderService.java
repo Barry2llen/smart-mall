@@ -17,6 +17,8 @@ public interface OrderService extends IService<Order> {
 
     Order getBySn(String sn);
 
+    Order releaseOrder(Long orderId);
+
     enum OrderSubmitStatus{
         OK(0, "成功"),
         PAGE_REDIRECT(1, "请重新提交"),

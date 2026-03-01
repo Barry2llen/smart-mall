@@ -1,10 +1,10 @@
 package edu.nchu.mall.services.order.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.rabbitmq.client.Channel;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.cart.CartFeignClient;
 import edu.nchu.mall.components.feign.member.MemberFeignClient;
@@ -31,9 +31,8 @@ import edu.nchu.mall.services.order.vo.OrderConfirm;
 import edu.nchu.mall.services.order.vo.OrderItemVO;
 //import org.apache.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.annotation.RabbitHandler;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +43,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,7 +53,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @CacheConfig(cacheNames = "order")
-@RabbitListener(queues = "order.release.queue")
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
 
     @Autowired
@@ -77,22 +74,41 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     StringRedisTemplate redisTemplate;
 
     @Autowired
+    RabbitTemplate rabbitTemplate;
+
+    @Autowired
     RedisUtils redisUtils;
 
     @Autowired
     OrderItemService orderItemService;
-
-    @RabbitHandler
-    public void release(Order order, Channel channel, Message message) throws IOException {
-        log.info("取消订单{}，准备发送消息给库存系统", order.getOrderSn());
-        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-    }
 
     @Override
     public Order getBySn(String sn) {
         LambdaQueryWrapper<Order> qw = Wrappers.lambdaQuery();
         qw.eq(Order::getOrderSn, sn);
         return getOne(qw);
+    }
+
+    @Override
+    public Order releaseOrder(Long orderId) {
+        LambdaQueryWrapper<Order> qw = Wrappers.lambdaQuery();
+        qw.eq(Order::getId, orderId);
+        Order order = getOne(qw);
+        if (order == null) {
+            log.error("订单[id={}]不存在", orderId);
+            throw new CustomException("订单不存在");
+        }
+
+        if (order.getStatus() == OrderStatus.UNPAID) {
+            LambdaUpdateWrapper<Order> uw = Wrappers.lambdaUpdate();
+            uw.eq(Order::getId, orderId);
+            uw.set(Order::getStatus, OrderStatus.CLOSED);
+            uw.set(Order::getModifyTime, LocalDateTime.now());
+            uw.eq(Order::getStatus, OrderStatus.UNPAID);
+            this.update(uw);
+        }
+
+        return order;
     }
 
     @Override
@@ -204,7 +220,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             self.saveOrder(order, address, items);
         } catch (StockNotEnoughException ex) {
             return OrderSubmitStatus.NOT_ENOUGH_STOCK;
-        } catch (CustomException e) {
+        } catch (CustomException | AmqpException e) {
             return OrderSubmitStatus.ERROR;
         }
 
@@ -231,7 +247,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new StockNotEnoughException("库存不足");
         }
 
-        int i = 1/0;
+        rabbitTemplate.convertAndSend("order.event.exchange", "order.create", order);
     }
 
     private Order createOrder(Long memberId, String username, String order_sn, OrderSubmit orderSubmit, MemberReceiveAddress address, List<OrderItem> items) {

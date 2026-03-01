@@ -11,7 +11,7 @@
     </update>
     <update id="unlockStock">
         UPDATE ware.wms_ware_sku
-        SET stock_locked = stock_locked - #{num} AND lock_status = #{status}
+        SET stock_locked = stock_locked - #{num}
         WHERE
             ware_id = #{wareId} AND
             sku_id = #{skuId}
