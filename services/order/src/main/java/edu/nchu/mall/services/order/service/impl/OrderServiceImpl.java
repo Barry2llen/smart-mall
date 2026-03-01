@@ -20,6 +20,7 @@ import edu.nchu.mall.models.enums.OrderStatus;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.Try;
 import edu.nchu.mall.models.vo.CartItemVO;
+import edu.nchu.mall.models.vo.PayVo;
 import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.order.constants.RedisConstant;
 import edu.nchu.mall.services.order.dao.OrderMapper;
@@ -27,8 +28,10 @@ import edu.nchu.mall.services.order.dto.OrderSubmit;
 import edu.nchu.mall.services.order.exception.StockNotEnoughException;
 import edu.nchu.mall.services.order.service.OrderItemService;
 import edu.nchu.mall.services.order.service.OrderService;
+import edu.nchu.mall.services.order.utils.OrderContext;
 import edu.nchu.mall.services.order.vo.OrderConfirm;
 import edu.nchu.mall.services.order.vo.OrderItemVO;
+import edu.nchu.mall.services.order.vo.OrderWithItems;
 //import org.apache.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
@@ -37,6 +40,8 @@ import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -44,11 +49,16 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -82,10 +92,57 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Autowired
     OrderItemService orderItemService;
 
+    @CacheEvict(key = "'list:' + #memberId")
+    public void deleteOrderListCache(Long memberId) {
+    }
+
     @Override
     public Order getBySn(String sn) {
         LambdaQueryWrapper<Order> qw = Wrappers.lambdaQuery();
         qw.eq(Order::getOrderSn, sn);
+        return getOne(qw);
+    }
+
+    @Override
+    @Cacheable(key = "'list:' + #memberId")
+    public List<OrderWithItems> listByMemberId(Long memberId) {
+        List<Order> orders = this.list(
+                Wrappers.<Order>lambdaQuery()
+                        .eq(Order::getMemberId, memberId)
+                        .orderByDesc(Order::getCreateTime));
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> orderSns = orders.stream()
+                .map(Order::getOrderSn)
+                .filter(Objects::nonNull)
+                .toList();
+        if (orderSns.isEmpty()) {
+            return orders.stream()
+                    .map(order -> new OrderWithItems(order, List.of()))
+                    .toList();
+        }
+
+        Map<String, List<OrderItem>> itemsByOrderSn = orderItemService.list(
+                        Wrappers.<OrderItem>lambdaQuery()
+                                .in(OrderItem::getOrderSn, orderSns)
+                                .orderByAsc(OrderItem::getId))
+                .stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrderSn));
+
+        return orders.stream()
+                .map(order -> new OrderWithItems(
+                        order,
+                        itemsByOrderSn.getOrDefault(order.getOrderSn(), Collections.emptyList())))
+                .toList();
+    }
+
+    @Override
+    public Order getBySn(Long memberId, String sn) {
+        LambdaQueryWrapper<Order> qw = Wrappers.lambdaQuery();
+        qw.eq(Order::getOrderSn, sn);
+        qw.eq(Order::getMemberId, memberId);
         return getOne(qw);
     }
 
@@ -108,7 +165,35 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             this.update(uw);
         }
 
+        deleteOrderListCache(order.getMemberId());
+
         return order;
+    }
+
+    @Override
+    //@CacheEvict
+    @Transactional(isolation = Isolation.REPEATABLE_READ, propagation = Propagation.REQUIRED)
+    public PayVo getOrderPay(Long memberId, String orderSn) throws Exception {
+        Order order = getBySn(memberId, orderSn);
+        if (order == null) {
+            log.error("订单[orderSn={}]不存在", orderSn);
+            throw new Exception("订单不存在");
+        }
+
+        OrderItem item = orderItemService.getOne(Wrappers.<OrderItem>lambdaQuery().eq(OrderItem::getOrderSn, orderSn).select(OrderItem::getSpuName));
+        if (item == null) {
+            log.error("订单项[orderSn={}]不存在", orderSn);
+            throw new Exception("订单项不存在");
+        }
+
+        BigDecimal amount = order.getPayAmount().setScale(2, RoundingMode.HALF_UP);
+        PayVo payVo = new PayVo();
+        payVo.setOut_trade_no(orderSn);
+        payVo.setTotal_amount(amount.toString());
+        payVo.setSubject(item.getSpuName().substring(0, 10) + "...");
+        payVo.setBody(order.getNote());
+
+        return payVo;
     }
 
     @Override
@@ -152,6 +237,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
+    @CacheEvict(key = "'list:' + #memberId")
     public OrderSubmitStatus submitOrder(Long memberId, OrderSubmit orderSubmit) {
         boolean res = redisUtils.checkAndDelete(RedisConstant.ORDER_CONFIRM_TOKEN_PREFIX + memberId, orderSubmit.getToken());
         if (!res) {
@@ -224,6 +310,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             return OrderSubmitStatus.ERROR;
         }
 
+        OrderContext.ORDER_SN.set(order_sn);
         return OrderSubmitStatus.OK;
 
     }

@@ -12,6 +12,7 @@ spring:
 #      - nacos:commons-seata?group=commons
       - nacos:commons?group=commons
       - nacos:rabbit?group=mq
+      - nacos:alipay?group=payment
   cloud:
     nacos:
       config:

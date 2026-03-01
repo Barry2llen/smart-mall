@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -16,6 +17,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +81,15 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 2. 提取并校验 Token
         String authHeader = request.getHeaders().getFirst("Authorization");
+        if (!StringUtils.hasText(authHeader)) {
+            HttpCookie cookie = request.getCookies().getFirst("access_token");
+            if (cookie != null && StringUtils.hasText(cookie.getValue())) {
+                authHeader = URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
+                if (!authHeader.startsWith("Bearer ")) {
+                    authHeader = "Bearer " + authHeader;
+                }
+            }
+        }
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
             return unauthorizedResponse(exchange, "缺少 Token");
         }

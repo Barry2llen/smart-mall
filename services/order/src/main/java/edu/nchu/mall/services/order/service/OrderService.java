@@ -3,11 +3,14 @@ package edu.nchu.mall.services.order.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.fasterxml.jackson.annotation.JsonValue;
 import edu.nchu.mall.models.entity.Order;
+import edu.nchu.mall.models.vo.PayVo;
 import edu.nchu.mall.services.order.dto.OrderSubmit;
 import edu.nchu.mall.services.order.vo.OrderConfirm;
+import edu.nchu.mall.services.order.vo.OrderWithItems;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface OrderService extends IService<Order> {
 
@@ -17,7 +20,13 @@ public interface OrderService extends IService<Order> {
 
     Order getBySn(String sn);
 
+    Order getBySn(Long memberId, String sn);
+
     Order releaseOrder(Long orderId);
+
+    PayVo getOrderPay(Long userId, String orderSn) throws Exception;
+
+    List<OrderWithItems> listByMemberId(Long memberId);
 
     enum OrderSubmitStatus{
         OK(0, "成功"),
