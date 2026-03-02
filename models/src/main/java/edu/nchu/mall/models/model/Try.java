@@ -36,7 +36,7 @@ public class Try <T> extends Pair.ImmutablePair<T, Throwable> {
         return new Try<>(null, ex);
     }
 
-    public static <T, R> Try<R> of(Function<T, R> func, T value) {
+    public static <T, R> Try<R> of(TryFunction<T, R> func, T value) {
         try {
             return Try.success(func.apply(value));
         } catch (Throwable ex) {
@@ -44,7 +44,7 @@ public class Try <T> extends Pair.ImmutablePair<T, Throwable> {
         }
     }
 
-    public static <T> Try<T> of(Supplier<T> supplier) {
+    public static <T> Try<T> of(TrySupplier<T> supplier) {
         try {
             return Try.success(supplier.get());
         } catch (Throwable ex) {
@@ -94,5 +94,20 @@ public class Try <T> extends Pair.ImmutablePair<T, Throwable> {
 
     public static boolean allSucceeded(Collection<Try<?>> tries) {
         return all(Try::succeeded, tries);
+    }
+
+    public T getOrElse(T b) {
+        T value = this.getValue();
+        return value != null ? value : b;
+    }
+
+    @FunctionalInterface
+    public interface TryFunction<T, R> {
+        R apply(T value) throws Throwable;
+    }
+
+    @FunctionalInterface
+    public interface TrySupplier<T> {
+        T get() throws Throwable;
     }
 }

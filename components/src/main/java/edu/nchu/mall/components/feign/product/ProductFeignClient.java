@@ -28,5 +28,8 @@ public interface ProductFeignClient {
     R<Map<Long, List<String>>> getBatchSkuAttrValues(@RequestParam List<Long> skuIds);
 
     @PostMapping("/spu-infos/batch")
-    R<Map<Long, SpuInfoVO>> getSpuInfoBatch(@RequestBody Collection<Long> spuIds);
+    R<Map<Long, SpuInfoVO>> getSpuInfoBatch(@RequestBody Iterable<Long> spuIds);
+
+    @PostMapping("/spu-images/default/batch")
+    R<Map<Long, String>> getSpuDefaultImagesBatch(@RequestBody Iterable<Long> spuIds);
 }
