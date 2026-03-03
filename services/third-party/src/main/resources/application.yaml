@@ -8,6 +8,8 @@ spring:
       - nacos:commons-redis?group=commons
       - nacos:commons?group=commons
       - nacos:commons-mail?group=commons
+      - nacos:commons-file?group=commons
+      - nacos:commons-callback?group=commons
   cloud:
     nacos:
       config:

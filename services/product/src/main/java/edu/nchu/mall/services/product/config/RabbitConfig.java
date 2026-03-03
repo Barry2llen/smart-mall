@@ -36,29 +36,4 @@ public class RabbitConfig {
     MessageConverter messageConverter(ObjectMapper mapper) {
         return new Jackson2JsonMessageConverter(mapper);
     }
-
-    @Bean
-    public Exchange productSpuExchange() {
-        return new TopicExchange("product.spu.exchange", true, false);
-    }
-
-    @Bean
-    public Exchange productSpuElasticExchange() {
-        return new TopicExchange("product.spu.elastic.exchange", true, false);
-    }
-
-    @Bean
-    public Binding productSpuElasticBinding() {
-        return new Binding("product.spu.elastic.exchange", Binding.DestinationType.EXCHANGE, "product.spu.exchange", "product.spu.elastic.#", null);
-    }
-
-    @Bean
-    public Queue productSpuElasticQueue() {
-        return new Queue("product.spu.elastic.queue", true, false, false);
-    }
-
-    @Bean
-    public Binding productSpuElasticEventsBinding() {
-        return new Binding("product.spu.elastic.queue", Binding.DestinationType.QUEUE, "product.spu.elastic.exchange", "product.spu.elastic.#", null);
-    }
 }

@@ -176,7 +176,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
 //        return true;
 
         try {
-            rabbitTemplate.convertAndSend("product.spu", "product.spu.elastic.putonsale", esProducts);
+            rabbitTemplate.convertAndSend("product.spu.exchange", "product.spu.elastic.putonsale", esProducts);
         } catch (Exception e){
             return false;
         }

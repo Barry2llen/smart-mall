@@ -1,18 +1,16 @@
-package edu.nchu.shop.services.file.controller;
+package edu.nchu.mall.services.third_party.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSException;
-import com.aliyun.oss.model.GenericRequest;
+import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.sts20150401.models.AssumeRoleResponse;
 import com.aliyun.sts20150401.models.AssumeRoleResponseBody;
-import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.tea.TeaException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.models.model.CallbackBody;
 import edu.nchu.mall.models.model.R;
-import edu.nchu.shop.services.file.pojo.File;
-import edu.nchu.shop.services.file.properties.OSSProperties;
+import edu.nchu.mall.services.third_party.pojo.File;
+import edu.nchu.mall.services.third_party.properties.OSSProperties;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,7 +32,7 @@ import java.util.*;
 @Tag(name = "OSS文件上传请求")
 @Slf4j
 @Controller
-@RequestMapping("/oss")
+@RequestMapping("file/oss")
 public class OSSController {
 
     @Value("${spring.cloud.alibaba.oss.callbackUrl.file:none}")
@@ -172,12 +170,12 @@ public class OSSController {
         AssumeRoleResponseBody.AssumeRoleResponseBodyCredentials sts_data = getCredential();
 
         //获取x-oss-credential里的date，当前日期，格式为yyyyMMdd
-        ZonedDateTime today = ZonedDateTime.now().withZoneSameInstant(java.time.ZoneOffset.UTC);
+        ZonedDateTime today = ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String date = today.format(formatter);
 
         //获取x-oss-date
-        ZonedDateTime now = ZonedDateTime.now().withZoneSameInstant(java.time.ZoneOffset.UTC);
+        ZonedDateTime now = ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC);
         DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
         String x_oss_date = now.format(formatter2);
 

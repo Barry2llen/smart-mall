@@ -1,4 +1,4 @@
-package edu.nchu.shop.services.file.properties;
+package edu.nchu.mall.services.third_party.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

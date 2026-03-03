@@ -1,8 +1,8 @@
-package edu.nchu.shop.services.file.config;
+package edu.nchu.mall.services.third_party.config;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
-import edu.nchu.shop.services.file.properties.OSSProperties;
+import edu.nchu.mall.services.third_party.properties.OSSProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

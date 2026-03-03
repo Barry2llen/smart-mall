@@ -1,7 +1,6 @@
-package edu.nchu.shop.services.file.config;
+package edu.nchu.mall.services.third_party.config;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 //@Configuration

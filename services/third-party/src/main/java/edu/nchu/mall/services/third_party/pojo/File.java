@@ -1,4 +1,4 @@
-package edu.nchu.shop.services.file.pojo;
+package edu.nchu.mall.services.third_party.pojo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

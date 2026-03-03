@@ -18,6 +18,8 @@ import java.util.List;
 public class Product {
 
     @Id
+    private String id;
+
     @Field(type = FieldType.Keyword)
     private String skuId;
 

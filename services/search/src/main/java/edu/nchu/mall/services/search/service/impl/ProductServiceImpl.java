@@ -38,7 +38,7 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RabbitListener(queues = "product.spu.elastic")
+@RabbitListener(queues = "product.spu.elastic.queue")
 public class ProductServiceImpl implements ProductService {
     @Autowired
     ElasticsearchOperations elasticsearchOperations;

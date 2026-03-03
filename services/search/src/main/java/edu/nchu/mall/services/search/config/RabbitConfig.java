@@ -2,6 +2,10 @@ package edu.nchu.mall.services.search.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.Exchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.autoconfigure.amqp.RabbitTemplateCustomizer;
@@ -31,5 +35,31 @@ public class RabbitConfig {
     @Bean
     MessageConverter messageConverter(ObjectMapper mapper) {
         return new Jackson2JsonMessageConverter(mapper);
+    }
+
+
+    @Bean
+    public Exchange productSpuExchange() {
+        return new TopicExchange("product.spu.exchange", true, false);
+    }
+
+    @Bean
+    public Exchange productSpuElasticExchange() {
+        return new TopicExchange("product.spu.elastic.exchange", true, false);
+    }
+
+    @Bean
+    public Binding productSpuElasticBinding() {
+        return new Binding("product.spu.elastic.exchange", Binding.DestinationType.EXCHANGE, "product.spu.exchange", "product.spu.elastic.#", null);
+    }
+
+    @Bean
+    public Queue productSpuElasticQueue() {
+        return new Queue("product.spu.elastic.queue", true, false, false);
+    }
+
+    @Bean
+    public Binding productSpuElasticEventsBinding() {
+        return new Binding("product.spu.elastic.queue", Binding.DestinationType.QUEUE, "product.spu.elastic.exchange", "product.spu.elastic.#", null);
     }
 }

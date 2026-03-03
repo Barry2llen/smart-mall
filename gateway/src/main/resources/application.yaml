@@ -31,11 +31,11 @@ spring:
             - RewritePath=/product/?(?<segment>.*), /$\{segment}
         - id: file
           uri:
-            lb://file
+            lb://third-party
           predicates:
             - Path=/file/**
           filters:
-            - RewritePath=/file/?(?<segment>.*), /$\{segment}
+            - RewritePath=/third-party/?(?<segment>.*), /$\{segment}
         - id: member
           uri:
             lb://member
