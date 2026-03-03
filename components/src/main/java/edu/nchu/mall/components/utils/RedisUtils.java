@@ -5,7 +5,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 @Component
 public class RedisUtils {
@@ -22,6 +24,22 @@ public class RedisUtils {
                 code
         );
         return Long.valueOf(1L).equals(result);
+    }
+
+    public Long sadd(String key, String... members) {
+        return redisTemplate.opsForSet().add(key, members);
+    }
+
+    public Set<String> smembers(String key) {
+        return redisTemplate.opsForSet().members(key);
+    }
+
+    public Boolean unlink(String key) {
+        return redisTemplate.unlink(key);
+    }
+
+    public Long unlink(Collection<String> keys) {
+        return redisTemplate.unlink(keys);
     }
 
     private static DefaultRedisScript<Long> createValidateAndDeleteScript() {

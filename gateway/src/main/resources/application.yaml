@@ -92,7 +92,7 @@ logging:
     org.springframework.http.server.reactive: DEBUG
 
 fronted:
-  url: localhost
+  url: localhost,laptop.barry2llen.site
 
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970

@@ -3,13 +3,15 @@ package edu.nchu.mall.services.order.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.fasterxml.jackson.annotation.JsonValue;
 import edu.nchu.mall.models.entity.Order;
+import edu.nchu.mall.models.enums.OrderStatus;
 import edu.nchu.mall.models.vo.PayVo;
 import edu.nchu.mall.services.order.dto.OrderSubmit;
 import edu.nchu.mall.services.order.vo.OrderConfirm;
 import edu.nchu.mall.services.order.vo.OrderWithItems;
+import edu.nchu.mall.services.order.vo.PayAsyncVo;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
-import java.io.Serializable;
 import java.util.List;
 
 public interface OrderService extends IService<Order> {
@@ -27,6 +29,16 @@ public interface OrderService extends IService<Order> {
     PayVo getOrderPay(Long userId, String orderSn) throws Exception;
 
     List<OrderWithItems> listByMemberId(Long memberId);
+
+    List<OrderWithItems> listByMemberId(Long memberId, Integer pageNum, Integer pageSize);
+
+    List<OrderWithItems> listByMemberId(Long memberId, Integer pageNum, Integer pageSize, Integer status, String keyword);
+
+    OrderWithItems getOrderBySn(Long memberId, String sn, boolean includeItems);
+
+    PayStatus handleAlipayAsync(PayAsyncVo vo) throws Throwable;
+
+    boolean updateOrderStatus(String orderSn, OrderStatus status);
 
     enum OrderSubmitStatus{
         OK(0, "成功"),
@@ -48,6 +60,23 @@ public interface OrderService extends IService<Order> {
         private final String message;
         OrderSubmitStatus(int code, String message) {
             this.code = code;
+            this.message = message;
+        }
+    }
+
+    @Getter
+    enum PayStatus{
+        SUCCESS(HttpStatus.OK, "success"),
+        FAILURE(HttpStatus.BAD_REQUEST, "failure"),
+        ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "error"),
+        INVALID_SIGN(HttpStatus.NOT_FOUND, "invalid sign");
+        private final HttpStatus status;
+
+        @JsonValue
+        private final String message;
+
+        PayStatus(HttpStatus httpStatus, String message) {
+            this.status = httpStatus;
             this.message = message;
         }
     }

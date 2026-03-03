@@ -7,28 +7,28 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
 
-    @Value("${fronted.url:''}")
-    private String frontedUrl;
+    @Value("${fronted.url}")
+    private List<String> frontedUrl;
 
     @Bean
     public CorsWebFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        if (frontedUrl == null || frontedUrl.trim().isEmpty() || "*".equals(frontedUrl.trim())) {
-            corsConfiguration.setAllowedOriginPatterns(Arrays.asList("*"));
+        if (frontedUrl == null || frontedUrl.isEmpty()) {
+            corsConfiguration.setAllowedOriginPatterns(List.of("*"));
         } else {
-            corsConfiguration.setAllowedOriginPatterns(Arrays.asList(
-                    "http://" + frontedUrl,
-                    "https://" + frontedUrl,
-                    "http://" + frontedUrl + ":*",
-                    "https://" + frontedUrl + ":*"
-            ));
+            corsConfiguration.setAllowedOriginPatterns(frontedUrl.stream().map(url -> List.of(
+                    "http://" + url,
+                    "https://" + url,
+                    "http://" + url + ":*",
+                    "https://" + url + ":*"
+            )).flatMap(List::stream).toList());
         }
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.addAllowedMethod("*");

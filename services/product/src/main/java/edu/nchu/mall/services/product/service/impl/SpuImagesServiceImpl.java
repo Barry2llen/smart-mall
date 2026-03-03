@@ -1,5 +1,7 @@
 package edu.nchu.mall.services.product.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.entity.SpuImages;
 import edu.nchu.mall.services.product.dao.SpuImagesMapper;
@@ -12,31 +14,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @CacheConfig(cacheNames = "spuImages")
 public class SpuImagesServiceImpl extends ServiceImpl<SpuImagesMapper, SpuImages> implements SpuImagesService {
-
     @Override
-    @CacheEvict(key = "#entity.id")
-    public boolean updateById(SpuImages entity) {
-        return super.updateById(entity);
-    }
+    public Map<Long, String> getSpuDefaultImagesBatch(Collection<Long> spuIds) {
 
-    @Override
-    @Cacheable(key = "#id")
-    public SpuImages getById(Serializable id) {
-        return super.getById(id);
-    }
+        if (spuIds.isEmpty()) {
+            return Map.of();
+        }
 
-    @Override
-    @CacheEvict(key = "#id")
-    public boolean removeById(Serializable id) {
-        return super.removeById(id);
-    }
+        LambdaQueryWrapper<SpuImages> qw = Wrappers.lambdaQuery();
+        qw.select(SpuImages::getSpuId, SpuImages::getImgUrl);
+        qw.in(SpuImages::getSpuId, spuIds);
+        qw.eq(SpuImages::getDefaultImg, 1);
 
-    @Override
-    public boolean saveBatch(Collection<SpuImages> entityList) {
-        return entityList.isEmpty() || super.saveBatch(entityList);
+        List<SpuImages> list = this.list(qw);
+        return list.stream().collect(Collectors.toMap(SpuImages::getSpuId, SpuImages::getImgUrl));
     }
 }

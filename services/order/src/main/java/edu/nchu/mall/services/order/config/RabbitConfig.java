@@ -45,7 +45,7 @@ public class RabbitConfig {
                 Map.of(
                         "x-dead-letter-exchange", "order.event.exchange",
                         "x-dead-letter-routing-key", "order.release",
-                        "x-message-ttl", 60000
+                        "x-message-ttl", 120000
                 )
         );
     }

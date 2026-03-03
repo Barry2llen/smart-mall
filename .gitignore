@@ -39,3 +39,6 @@ build/
 
 ### nacos ###
 nacos-configs
+
+### dev ###
+application-dev.yaml

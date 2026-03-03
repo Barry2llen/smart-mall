@@ -1,7 +1,6 @@
 package edu.nchu.mall.services.order.vo;
 
 import edu.nchu.mall.models.entity.Order;
-import edu.nchu.mall.models.entity.OrderItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,5 +18,5 @@ public class OrderWithItems {
     private Order order;
 
     @Schema(description = "订单项列表")
-    private List<OrderItem> items;
+    private List<OrderListSpuItem> items;
 }

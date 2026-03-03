@@ -5,17 +5,8 @@ import edu.nchu.mall.models.entity.SpuImages;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 
 public interface SpuImagesService extends IService<SpuImages> {
-    @Override
-    boolean updateById(SpuImages entity);
-
-    @Override
-    SpuImages getById(Serializable id);
-
-    @Override
-    boolean removeById(Serializable id);
-
-    @Override
-    boolean saveBatch(Collection<SpuImages> entityList);
+    Map<Long, String> getSpuDefaultImagesBatch(Collection<Long> spuIds);
 }

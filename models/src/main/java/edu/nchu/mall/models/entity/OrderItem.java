@@ -43,9 +43,8 @@ public class OrderItem {
     @Schema(description = "spu名")
     private String spuName;
 
-    @JsonIgnore
     @TableField("spu_pic")
-    @Schema(description = "spu_pic")
+    @Schema(description = "spu图片")
     private String spuPic;
 
     @TableField("spu_brand")

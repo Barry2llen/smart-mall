@@ -9,7 +9,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,10 +25,6 @@ public class OrderReleaseListener {
     @Autowired
     RabbitTemplate rabbitTemplate;
 
-    @CacheEvict(key = "'list:' + #memberId", cacheNames = "order")
-    public void deleteOrderListCache(Long memberId) {
-    }
-
     @RabbitHandler
     @Transactional
     public void release(Order order, Channel channel, Message message) throws IOException {
@@ -40,8 +35,6 @@ public class OrderReleaseListener {
             if (order != null) {
                 // 发送消息通知库存解锁
                 rabbitTemplate.convertAndSend("order.event.exchange", "order.stock.release", order);
-                // 删除缓存
-                deleteOrderListCache(order.getMemberId());
             }
         } catch (Exception e) {
             log.error("取消订单[sn={}]失败", order.getOrderSn(), e);

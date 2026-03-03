@@ -3,44 +3,59 @@ package edu.nchu.mall.services.order.config;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.models.vo.PayVo;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 @Data
+@Slf4j
 @Component
 @RefreshScope
 @ConfigurationProperties(prefix = "payment.alipay")
 public class AlipayTemplate {
 
+    @Autowired
+    ObjectMapper mapper;
+
     //在支付宝创建的应用的id
-    private  String app_id;
+    private String app_id;
 
     // 商户私钥，您的PKCS8格式RSA2私钥
-    private  String merchant_private_key;
+    private String merchant_private_key;
     // 支付宝公钥,查看地址：https://openhome.alipay.com/platform/keyManage.htm 对应APPID下的支付宝公钥。
-    private  String alipay_public_key;
+    private String alipay_public_key;
     // 服务器[异步通知]页面路径  需http://格式的完整路径，不能加?id=123这类自定义参数，必须外网可以正常访问
     // 支付宝会悄悄的给我们发送一个请求，告诉我们支付成功的信息
-    private  String notify_url;
+    private String notify_url;
 
     // 页面跳转同步通知页面路径 需http://格式的完整路径，不能加?id=123这类自定义参数，必须外网可以正常访问
     //同步通知，支付成功，一般跳转到成功页
-    private  String return_url;
+    private String return_url;
 
     // 签名方式
-    private  String sign_type;
+    private String sign_type;
 
     // 字符编码格式
-    private  String charset;
+    private String charset;
 
     // 支付宝网关； https://openapi.alipaydev.com/gateway.do
-    private  String gatewayUrl;
+    private String gatewayUrl;
 
-    public  String pay(PayVo vo) throws AlipayApiException {
+    public String pay(PayVo vo) throws AlipayApiException, JsonProcessingException {
 
         //AlipayClient alipayClient = new DefaultAlipayClient(AlipayTemplate.gatewayUrl, AlipayTemplate.app_id, AlipayTemplate.merchant_private_key, "json", AlipayTemplate.charset, AlipayTemplate.alipay_public_key, AlipayTemplate.sign_type);
         //1、根据支付宝的配置生成一个支付客户端
@@ -53,27 +68,36 @@ public class AlipayTemplate {
         alipayRequest.setReturnUrl(return_url);
         alipayRequest.setNotifyUrl(notify_url);
 
-        //商户订单号，商户网站订单系统中唯一订单号，必填
-        String out_trade_no = vo.getOut_trade_no();
-        //付款金额，必填
-        String total_amount = vo.getTotal_amount();
-        //订单名称，必填
-        String subject = vo.getSubject();
-        //商品描述，可空
-        String body = vo.getBody();
+        String json = mapper.writeValueAsString(vo);
 
-        alipayRequest.setBizContent("{\"out_trade_no\":\""+ out_trade_no +"\","
-                + "\"total_amount\":\""+ total_amount +"\","
-                + "\"subject\":\""+ subject +"\","
-                + "\"body\":\""+ body +"\","
-                + "\"product_code\":\"FAST_INSTANT_TRADE_PAY\"}");
+        alipayRequest.setBizContent(json);
+
+        log.info(json);
 
         String result = alipayClient.pageExecute(alipayRequest).getBody();
 
         //会收到支付宝的响应，响应的是一个页面，只要浏览器显示这个页面，就会自动来到支付宝的收银台页面
-        System.out.println("支付宝的响应："+result);
+        //System.out.println("支付宝的响应："+result);
 
         return result;
 
+    }
+
+    public boolean validateSign(HttpServletRequest request) throws Exception{
+        Map<String,String> params = new HashMap<>();
+        Map<String,String[]> requestParams = request.getParameterMap();
+        for (String name : requestParams.keySet()) {
+            String[] values = requestParams.get(name);
+            String valueStr = "";
+            for (int i = 0; i < values.length; i++) {
+                valueStr = (i == values.length - 1) ? valueStr + values[i]
+                        : valueStr + values[i] + ",";
+            }
+            //乱码解决，这段代码在出现乱码时使用
+            valueStr = new String(valueStr.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+            params.put(name, valueStr);
+        }
+
+        return AlipaySignature.rsaCheckV1(params, alipay_public_key, charset, sign_type); //调用SDK验证签名
     }
 }

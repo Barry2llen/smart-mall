@@ -1,33 +1,45 @@
 # 仓库指南
 
 ## 项目结构与模块组织
-- 根目录是 Maven 多模块：`models`（共享实体/DTO）、`components`（通用配置、缓存、全局异常等公共组件）、`services`（业务服务集合）、`gateway`（网关）、`ruoyi`（若依相关模块）。
-- `services` 下包含：`product`、`order`、`coupon`、`member`、`ware`，各模块均有 `src/main/java` 与 `src/main/resources`。
-- Controller 约定位于 `edu.nchu.mall.services.<module>.controller`；Swagger/Knife4j 扫描包需与模块匹配（例如 order：`edu.nchu.mall.services.order.controller`）。
-- 数据库 DDL 放在 `sql/`（如 `sql/order.sql`），实体字段需与表结构/注释保持同步。
+- 根目录是 Maven 多模块聚合：`services`、`models`、`components`、`gateway`。
+- `services` 当前包含 11 个子模块：`product`、`order`、`coupon`、`member`、`ware`、`file`、`search`、`auth`、`third-party`、`cart`、`ruoyi`。
+- 业务模块主包以 `edu.nchu.mall.services.<module>` 为主；`file` 模块使用 `edu.nchu.shop.services.file`（跨模块联调时注意包名前缀差异）。
+- Controller 实际存在两种分层：`...controller`（管理/CRUD）与 `...web`（页面/聚合接口），新增接口请沿用所在模块既有风格。
+- 公共模型在 `models/src/main/java/edu/nchu/mall/models`（entity/dto/vo/enums 等）；公共配置与 Feign 在 `components/src/main/java/edu/nchu/mall/components`。
+- 网关在 `gateway`；若依后台在 `services/ruoyi`（独立配置体系，含 `application.yml`、`application-druid.yml` 及代码生成模板）。
+- 数据库 DDL 在 `sql/`（`product.sql`、`order.sql`、`coupon.sql`、`member.sql`、`ware.sql` 等），实体字段与注释变更需同步 DDL。
 
 ## 构建、测试与开发命令
-- `mvn clean install`：全量构建 + 测试，提交前建议执行。
-- `mvn test`：运行所有单测。
-- `mvn -pl services/order -am package`：按模块快速构建（将 `order` 替换为其他模块名）。
-- `mvn -pl services/order -am spring-boot:run`：本地启动指定服务并构建依赖。
+- `mvn clean install`：全量构建与测试（提交前建议执行）。
+- `mvn test`：运行全仓单测。
+- `mvn -pl services/<module> -am package`：按模块构建（例如 `services/order`、`services/search`）。
+- `mvn -pl services/<module> -am spring-boot:run`：本地启动指定服务并自动构建依赖。
+- `mvn -pl gateway -am spring-boot:run`：启动网关。
+- `mvn -pl services/ruoyi -am spring-boot:run`：启动若依模块（需先准备独立数据源配置）。
+
+## 配置与依赖约定
+- 大部分微服务通过 Nacos `shared-configs` 载入公共配置（常见：`commons-mysql`、`commons-redis`、`commons-redis-cache`、`commons`）。
+- `order`、`product`、`ware` 使用 RabbitMQ 相关配置；`search` 依赖 Elasticsearch 配置；`auth/order` 还引用鉴权/支付相关配置。
+- 默认本地连接信息以 `localhost` MySQL 为主（各模块库名不同，如 `product`、`order`、`coupon`、`member`、`ware`、`ry-vue`）。
+- 修改缓存 key/TTL、MQ 路由键、Nacos 配置名时，需在 PR 写明兼容与发布步骤。
 
 ## 编码风格与命名规范
-- Java：4 空格缩进、UTF-8、左大括号同行；类名 PascalCase、方法/字段 camelCase、包名小写点分。
-- MyBatis-Plus 实体需使用 `@TableName/@TableField/@TableId`；每个字段添加 `@Schema` 且语义与数据库一致。
-- Controller 返回统一的 `R`/`RCT` 包装；REST 路径按领域前缀（`/orders`、`/order-items`、`/payment-infos` 等）。
-- SQL/迁移文件命名需语义化（如 `order-ops-202601.sql`）。
+- Java：4 空格缩进、UTF-8、左大括号同行；类名 PascalCase、方法/字段 camelCase、包名全小写。
+- MyBatis-Plus 实体保持 `@TableName/@TableId/@TableField` 完整；字段注解与数据库语义一致。
+- 接口返回优先使用统一包装（`R`/`RCT`）；异常统一交由全局异常处理（`components` 中的 advice/exception 体系）。
+- 新增 Feign 客户端优先放在 `components/.../feign/<domain>`，避免在各服务重复定义。
 
 ## 测试规范
-- 测试放在 `src/test/java`，与目标类同名并加 `*Test` 后缀（如 `OrderServiceImplTest`）。
-- 优先使用 JUnit 5；外部依赖（DB/Redis/Nacos）尽量 mock，保证测试稳定快速。
-- 如需跳过测试或手工验证，请在 PR 中说明；默认期望 `mvn test` 通过。
+- 测试目录：`src/test/java`，命名使用 `*Test` 或 `*Tests`，当前工程基于 JUnit 5（`org.junit.jupiter.api.Test`）。
+- 优先编写稳定单测；外部依赖（Nacos/Redis/MQ/ES/DB）尽量 mock 或隔离，避免环境耦合。
+- 若仅做手工验证或跳过测试，需在 PR 明确说明验证范围与风险。
 
 ## 提交与 PR 规范
-- 提交格式：`type(scope): subject`（如 `feat(order): add refund api`），subject ≤ 50 字符，正文 72 字符换行。
-- PR 需包含变更概要、测试命令/结果、关联 Issue/Jira；API/行为改动需附截图或 curl 示例。
-- 涉及 Nacos/Redis/DB 变更时，需说明兼容性与发布/回滚要点。
+- 提交信息：`type(scope): subject`（示例：`feat(order): add pay callback idempotency`）。
+- PR 至少包含：变更概要、影响模块、测试命令与结果、回滚方案。
+- 涉及 API 行为变更时，附 `curl` 示例或接口文档截图；涉及 DDL 时附迁移与兼容说明。
 
 ## 安全与配置提示
-- 禁止提交敏感信息；本地覆盖配置请放入忽略文件（如 `application-local.yml`）。
-- 调整缓存 key/TTL 或 DDL 时，请在 PR 说明兼容与部署步骤。
+- 禁止提交密钥、密码、Token、短信/邮件凭据等敏感信息。
+- 本地覆盖配置使用未跟踪文件（如 `application-local.yml` 或 IDE profile），不要直接改共享默认值并提交。
+- 鉴权相关改动（JWT、网关过滤器、Spring Security）需补充最小权限与放行范围说明，避免误放开接口。
