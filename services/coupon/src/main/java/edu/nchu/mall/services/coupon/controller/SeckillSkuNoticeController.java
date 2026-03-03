@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
 
 @Tag(name = "SeckillSkuNotice")
 @Slf4j
@@ -22,6 +24,16 @@ public class SeckillSkuNoticeController {
 
     @Autowired
     SeckillSkuNoticeService seckillSkuNoticeService;
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页数"),
+            @Parameter(name = "pageSize", description = "页面大小")
+    })
+    @Operation(summary = "获取SeckillSkuNotice列表")
+    @GetMapping("/list")
+    public R<List<SeckillSkuNotice>> getSeckillSkuNotices(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
+        return R.success(seckillSkuNoticeService.list(new Page<>(pageNum, pageSize)));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "SeckillSkuNotice主键"))
     @Operation(summary = "获取SeckillSkuNotice详情")
@@ -70,3 +82,9 @@ public class SeckillSkuNoticeController {
         return R.fail("delete failed");
     }
 }
+
+
+
+
+
+

@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
 
 @Tag(name = "CouponSpuCategoryRelation")
 @Slf4j
@@ -22,6 +24,16 @@ public class CouponSpuCategoryRelationController {
 
     @Autowired
     CouponSpuCategoryRelationService couponSpuCategoryRelationService;
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页数"),
+            @Parameter(name = "pageSize", description = "页面大小")
+    })
+    @Operation(summary = "获取CouponSpuCategoryRelation列表")
+    @GetMapping("/list")
+    public R<List<CouponSpuCategoryRelation>> getCouponSpuCategoryRelations(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
+        return R.success(couponSpuCategoryRelationService.list(new Page<>(pageNum, pageSize)));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "CouponSpuCategoryRelation主键"))
     @Operation(summary = "获取CouponSpuCategoryRelation详情")
@@ -70,3 +82,9 @@ public class CouponSpuCategoryRelationController {
         return R.fail("delete failed");
     }
 }
+
+
+
+
+
+

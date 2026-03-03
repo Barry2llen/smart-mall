@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
 
 @Tag(name = "SkuFullReduction")
 @Slf4j
@@ -23,6 +25,16 @@ public class SkuFullReductionController {
 
     @Autowired
     SkuFullReductionService skuFullReductionService;
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页数"),
+            @Parameter(name = "pageSize", description = "页面大小")
+    })
+    @Operation(summary = "获取SkuFullReduction列表")
+    @GetMapping("/list")
+    public R<List<SkuFullReduction>> getSkuFullReductions(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
+        return R.success(skuFullReductionService.list(new Page<>(pageNum, pageSize)));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "SkuFullReduction主键"))
     @Operation(summary = "获取SkuFullReduction详情")
@@ -80,3 +92,9 @@ public class SkuFullReductionController {
         return R.fail("save failed");
     }
 }
+
+
+
+
+
+

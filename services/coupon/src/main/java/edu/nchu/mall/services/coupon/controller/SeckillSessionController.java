@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.util.List;
 
 @Tag(name = "SeckillSession")
 @Slf4j
@@ -22,6 +24,16 @@ public class SeckillSessionController {
 
     @Autowired
     SeckillSessionService seckillSessionService;
+
+    @Parameters({
+            @Parameter(name = "pageNum", description = "页数"),
+            @Parameter(name = "pageSize", description = "页面大小")
+    })
+    @Operation(summary = "获取SeckillSession列表")
+    @GetMapping("/list")
+    public R<List<SeckillSession>> getSeckillSessions(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
+        return R.success(seckillSessionService.list(new Page<>(pageNum, pageSize)));
+    }
 
     @Parameters(@Parameter(name = "sid", description = "SeckillSession主键"))
     @Operation(summary = "获取SeckillSession详情")
@@ -70,3 +82,9 @@ public class SeckillSessionController {
         return R.fail("delete failed");
     }
 }
+
+
+
+
+
+
