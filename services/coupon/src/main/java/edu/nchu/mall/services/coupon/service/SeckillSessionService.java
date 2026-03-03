@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.SeckillSession;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface SeckillSessionService extends IService<SeckillSession> {
     @Override
@@ -14,4 +15,6 @@ public interface SeckillSessionService extends IService<SeckillSession> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<SeckillSession> list(Integer pageNum, Integer pageSize, String name);
 }

@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 @Tag(name = "SeckillSkuNotice")
@@ -32,7 +31,7 @@ public class SeckillSkuNoticeController {
     @Operation(summary = "获取SeckillSkuNotice列表")
     @GetMapping("/list")
     public R<List<SeckillSkuNotice>> getSeckillSkuNotices(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
-        return R.success(seckillSkuNoticeService.list(new Page<>(pageNum, pageSize)));
+        return R.success(seckillSkuNoticeService.list(pageNum, pageSize));
     }
 
     @Parameters(@Parameter(name = "sid", description = "SeckillSkuNotice主键"))

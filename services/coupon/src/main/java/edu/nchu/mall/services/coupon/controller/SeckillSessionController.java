@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 @Tag(name = "SeckillSession")
@@ -27,12 +26,14 @@ public class SeckillSessionController {
 
     @Parameters({
             @Parameter(name = "pageNum", description = "页数"),
-            @Parameter(name = "pageSize", description = "页面大小")
+            @Parameter(name = "pageSize", description = "页面大小"),
+            @Parameter(name = "name", description = "场次名称")
     })
     @Operation(summary = "获取SeckillSession列表")
     @GetMapping("/list")
-    public R<List<SeckillSession>> getSeckillSessions(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
-        return R.success(seckillSessionService.list(new Page<>(pageNum, pageSize)));
+    public R<List<SeckillSession>> getSeckillSessions(@RequestParam Integer pageNum, @RequestParam Integer pageSize,
+                                                      @RequestParam(required = false) String name) {
+        return R.success(seckillSessionService.list(pageNum, pageSize, name));
     }
 
     @Parameters(@Parameter(name = "sid", description = "SeckillSession主键"))

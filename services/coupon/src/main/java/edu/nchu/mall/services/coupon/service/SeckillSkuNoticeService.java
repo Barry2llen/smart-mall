@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.SeckillSkuNotice;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface SeckillSkuNoticeService extends IService<SeckillSkuNotice> {
     @Override
@@ -14,4 +15,6 @@ public interface SeckillSkuNoticeService extends IService<SeckillSkuNotice> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<SeckillSkuNotice> list(Integer pageNum, Integer pageSize);
 }

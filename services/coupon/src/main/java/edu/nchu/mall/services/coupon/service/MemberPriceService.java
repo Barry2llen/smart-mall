@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.MemberPrice;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface MemberPriceService extends IService<MemberPrice> {
     @Override
@@ -14,4 +15,6 @@ public interface MemberPriceService extends IService<MemberPrice> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<MemberPrice> list(Integer pageNum, Integer pageSize);
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.SeckillPromotion;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface SeckillPromotionService extends IService<SeckillPromotion> {
     @Override
@@ -14,4 +15,6 @@ public interface SeckillPromotionService extends IService<SeckillPromotion> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<SeckillPromotion> list(Integer pageNum, Integer pageSize, String title, Integer status);
 }

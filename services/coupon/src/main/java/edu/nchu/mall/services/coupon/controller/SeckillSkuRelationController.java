@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 @Tag(name = "SeckillSkuRelation")
@@ -27,12 +26,17 @@ public class SeckillSkuRelationController {
 
     @Parameters({
             @Parameter(name = "pageNum", description = "页数"),
-            @Parameter(name = "pageSize", description = "页面大小")
+            @Parameter(name = "pageSize", description = "页面大小"),
+            @Parameter(name = "key", description = "搜索关键字（可选）（id、商品id或场次名）"),
+            @Parameter(name = "promotionSessionId", description = "场次id（可选）")
     })
     @Operation(summary = "获取SeckillSkuRelation列表")
     @GetMapping("/list")
-    public R<List<SeckillSkuRelation>> getSeckillSkuRelations(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
-        return R.success(seckillSkuRelationService.list(new Page<>(pageNum, pageSize)));
+    public R<List<SeckillSkuRelation>> getSeckillSkuRelations(@RequestParam Integer pageNum,
+                                                              @RequestParam Integer pageSize,
+                                                              @RequestParam(required = false) String key,
+                                                              @RequestParam(required = false) Long promotionSessionId) {
+        return R.success(seckillSkuRelationService.list(pageNum, pageSize, key, promotionSessionId));
     }
 
     @Parameters(@Parameter(name = "sid", description = "SeckillSkuRelation主键"))

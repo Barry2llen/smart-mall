@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.CouponSpuCategoryRelation;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface CouponSpuCategoryRelationService extends IService<CouponSpuCategoryRelation> {
     @Override
@@ -14,4 +15,6 @@ public interface CouponSpuCategoryRelationService extends IService<CouponSpuCate
 
     @Override
     boolean removeById(Serializable id);
+
+    List<CouponSpuCategoryRelation> list(Integer pageNum, Integer pageSize);
 }

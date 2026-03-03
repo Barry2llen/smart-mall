@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 @Tag(name = "SpuBounds")
@@ -32,7 +31,7 @@ public class SpuBoundsController {
     @Operation(summary = "获取SpuBounds列表")
     @GetMapping("/list")
     public R<List<SpuBounds>> getSpuBoundss(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
-        return R.success(spuBoundsService.list(new Page<>(pageNum, pageSize)));
+        return R.success(spuBoundsService.list(pageNum, pageSize));
     }
 
     @Parameters(@Parameter(name = "sid", description = "SpuBounds主键"))

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.HomeAdv;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface HomeAdvService extends IService<HomeAdv> {
     @Override
@@ -14,4 +15,6 @@ public interface HomeAdvService extends IService<HomeAdv> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<HomeAdv> list(Integer pageNum, Integer pageSize, String name, Integer status);
 }

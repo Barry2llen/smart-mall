@@ -1,5 +1,9 @@
 package edu.nchu.mall.services.coupon.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.models.entity.SeckillSession;
 import edu.nchu.mall.services.coupon.dao.SeckillSessionMapper;
@@ -9,8 +13,10 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Service
 @CacheConfig(cacheNames = "seckillSession")
@@ -32,5 +38,14 @@ public class SeckillSessionServiceImpl extends ServiceImpl<SeckillSessionMapper,
     @CacheEvict(key = "#id")
     public boolean removeById(Serializable id) {
         return super.removeById(id);
+    }
+
+    @Override
+    public List<SeckillSession> list(Integer pageNum, Integer pageSize, String name) {
+        IPage<SeckillSession> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<SeckillSession> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.like(StringUtils.hasText(name), SeckillSession::getName, name)
+                .orderByDesc(SeckillSession::getId);
+        return super.page(page, queryWrapper).getRecords();
     }
 }

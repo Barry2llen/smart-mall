@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.SkuLadder;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface SkuLadderService extends IService<SkuLadder> {
     @Override
@@ -14,4 +15,6 @@ public interface SkuLadderService extends IService<SkuLadder> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<SkuLadder> list(Integer pageNum, Integer pageSize);
 }

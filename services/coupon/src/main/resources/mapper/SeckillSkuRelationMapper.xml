@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="edu.nchu.mall.services.coupon.dao.SeckillSkuRelationMapper">
+    <select id="selectPageByCondition" resultType="edu.nchu.mall.models.entity.SeckillSkuRelation">
+        SELECT
+            ssr.*
+        FROM sms_seckill_sku_relation ssr
+        LEFT JOIN sms_seckill_session sss ON ssr.promotion_session_id = sss.id
+        <where>
+            <if test="promotionSessionId != null">
+                ssr.promotion_session_id = #{promotionSessionId}
+            </if>
+            <if test="key != null and key != ''">
+                AND (
+                    <if test="numericPrefixRanges != null and numericPrefixRanges.size() > 0">
+                        <foreach collection="numericPrefixRanges" item="range" separator=" OR ">
+                            ssr.id BETWEEN #{range.start} AND #{range.end}
+                        </foreach>
+                        OR
+                        <foreach collection="numericPrefixRanges" item="range" separator=" OR ">
+                            ssr.sku_id BETWEEN #{range.start} AND #{range.end}
+                        </foreach>
+                        OR
+                    </if>
+                    sss.name LIKE CONCAT(#{key}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY ssr.id DESC
+    </select>
+</mapper>

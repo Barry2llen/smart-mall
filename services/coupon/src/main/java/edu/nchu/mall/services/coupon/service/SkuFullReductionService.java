@@ -5,6 +5,7 @@ import edu.nchu.mall.models.dto.SkuReductionDTO;
 import edu.nchu.mall.models.entity.SkuFullReduction;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface SkuFullReductionService extends IService<SkuFullReduction> {
     @Override
@@ -15,6 +16,8 @@ public interface SkuFullReductionService extends IService<SkuFullReduction> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<SkuFullReduction> list(Integer pageNum, Integer pageSize);
 
     boolean saveSkuReduction(SkuReductionDTO dto);
 }

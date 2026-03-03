@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import edu.nchu.mall.models.entity.CouponHistory;
 
 import java.io.Serializable;
+import java.util.List;
 
 public interface CouponHistoryService extends IService<CouponHistory> {
     @Override
@@ -14,4 +15,6 @@ public interface CouponHistoryService extends IService<CouponHistory> {
 
     @Override
     boolean removeById(Serializable id);
+
+    List<CouponHistory> list(Integer pageNum, Integer pageSize, String memberNickName, Integer useType);
 }

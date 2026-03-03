@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 @Tag(name = "HomeAdv")
@@ -27,12 +26,16 @@ public class HomeAdvController {
 
     @Parameters({
             @Parameter(name = "pageNum", description = "页数"),
-            @Parameter(name = "pageSize", description = "页面大小")
+            @Parameter(name = "pageSize", description = "页面大小"),
+            @Parameter(name = "name", description = "广告名称"),
+            @Parameter(name = "status", description = "状态")
     })
     @Operation(summary = "获取HomeAdv列表")
     @GetMapping("/list")
-    public R<List<HomeAdv>> getHomeAdvs(@RequestParam Integer pageNum, @RequestParam Integer pageSize) {
-        return R.success(homeAdvService.list(new Page<>(pageNum, pageSize)));
+    public R<List<HomeAdv>> getHomeAdvs(@RequestParam Integer pageNum, @RequestParam Integer pageSize,
+                                        @RequestParam(required = false) String name,
+                                        @RequestParam(required = false) Integer status) {
+        return R.success(homeAdvService.list(pageNum, pageSize, name, status));
     }
 
     @Parameters(@Parameter(name = "sid", description = "HomeAdv主键"))

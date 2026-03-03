@@ -78,6 +78,13 @@ spring:
             - Path=/order/**
           filters:
             - RewritePath=/order/?(?<segment>.*), /$\{segment}
+        - id: coupon
+          uri:
+            lb://coupon
+          predicates:
+            - Path=/coupon/**
+          filters:
+            - RewritePath=/coupon/?(?<segment>.*), /$\{segment}
 
 logging:
   level:

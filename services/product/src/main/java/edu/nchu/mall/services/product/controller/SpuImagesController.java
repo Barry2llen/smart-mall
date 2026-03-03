@@ -15,7 +15,6 @@ import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@Hidden
 @Tag(name = "SpuImages")
 @Slf4j
 @RestController
