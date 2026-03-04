@@ -3,6 +3,7 @@ package edu.nchu.mall.services.coupon.controller;
 import edu.nchu.mall.models.entity.SeckillSession;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
+import edu.nchu.mall.models.vo.SeckillSessionVO;
 import edu.nchu.mall.services.coupon.service.SeckillSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,6 +24,11 @@ public class SeckillSessionController {
 
     @Autowired
     SeckillSessionService seckillSessionService;
+
+    @GetMapping("/latest3days")
+    public R<List<SeckillSessionVO>> latest3DaysSeckillSessions() {
+        return R.success(seckillSessionService.getLatest3DaysSessions());
+    }
 
     @Parameters({
             @Parameter(name = "pageNum", description = "页数"),

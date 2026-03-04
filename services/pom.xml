@@ -21,6 +21,7 @@
         <module>auth</module>
         <module>third-party</module>
         <module>cart</module>
+        <module>flash-sale</module>
     </modules>
 
     <properties>

@@ -42,11 +42,11 @@ public class SeckillSkuRelation {
 
     @TableField("seckill_count")
     @Schema(description = "秒杀总量")
-    private BigDecimal seckillCount;
+    private Integer seckillCount;
 
     @TableField("seckill_limit")
     @Schema(description = "每人限购数量")
-    private BigDecimal seckillLimit;
+    private Integer seckillLimit;
 
     @TableField("seckill_sort")
     @Schema(description = "排序")

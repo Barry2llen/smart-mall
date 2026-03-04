@@ -1,0 +1,14 @@
+// POST  /search/product/search
+{
+  // 搜索关键词
+  "keyword": "iPhone",
+  // 0表示无货，1表示有货
+  "hasStock": 0,
+  "catalogId": "225",
+  "attrs": [
+    // 属性id_属性值1:属性值2:属性值3:...
+    "2017506484590100481_iPhone Air:iPhone 17e"
+  ],
+  // min_max价格区间
+  "skuPrice": "_6000"
+}
