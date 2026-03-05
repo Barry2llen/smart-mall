@@ -86,10 +86,10 @@ spring:
           filters:
             - RewritePath=/coupon/?(?<segment>.*), /$\{segment}
 
-logging:
-  level:
-    org.springframework.cloud.gateway: TRACE
-    org.springframework.http.server.reactive: DEBUG
+#logging:
+#  level:
+#    org.springframework.cloud.gateway: TRACE
+#    org.springframework.http.server.reactive: DEBUG
 
 fronted:
   url: localhost,laptop.barry2llen.site

@@ -19,6 +19,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +37,6 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     public static final String FLASH_SALE_SESSIONS_KEY = "flash_sale:sessions";
     public static final String FLASH_SALE_SESSIONS_INFO_KEY = "flash_sale:sessions_info"; // 存储sessionId到FlashSaleSession的映射，方便查询
     public static final String FLASH_SALE_SESSION_SKUS_KEY_PREFIX = "flash_sale:session_skus:"; // 后面跟sessionId
-
     public static final String FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX = "flash_sale:semaphore:"; // 后面跟随机码，存储每个SKU的库存信号量
 
     @Value("${flashsale.cache.timeout-seconds:86400}") // 默认24小时
@@ -124,17 +125,35 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                 }
             })));
 
-            //delayMessageSender.sendDelayMessage(session.getId(), session.getEndTime().plusSeconds(flashSaleCacheTimeoutMs));
+            delayMessageSender.sendDelayMessage(session.getId(), session.getEndTime().plusSeconds(flashSaleCacheTimeoutMs));
         }
     }
 
     @Override
     public void cleanFlashSaleSessionCache(Long sessionId) {
-        // 删除商品信息
-        String sessionSkusKey = FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId;
-        redisTemplate.unlink(sessionSkusKey);
         // 删除场次信息
         redisTemplate.opsForHash().delete(FLASH_SALE_SESSIONS_INFO_KEY, sessionId);
+        // 删除库存信号量
+        final String sessionSkusKey = FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId;
+        ScanOptions scanOptions = ScanOptions.scanOptions().count(200).build();
+        try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan(sessionSkusKey, scanOptions)) {
+            while (cursor.hasNext()) {
+                Map.Entry<Object, Object> entry = cursor.next();
+                try {
+                    FlashSaleRelatedSkuInfo skuInfo = mapper.readValue((String) entry.getValue(), FlashSaleRelatedSkuInfo.class);
+                    String randomCode = skuInfo.getRandomCode();
+                    if (randomCode == null || randomCode.isBlank()) {
+                        log.warn("Skip deleting semaphore for session {} because randomCode is empty, skuField={}", sessionId, entry.getKey());
+                        continue;
+                    }
+                    redissonClient.getSemaphore(FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + randomCode).delete();
+                } catch (Exception e) {
+                    log.error("Failed to process SKU info during cache cleanup for session {} and skuField {}: {}", sessionId, entry.getKey(), e.getMessage(), e);
+                }
+            }
+        }
+        // 删除商品信息
+        redisTemplate.unlink(sessionSkusKey);
         // 从ZSet中删除场次ID
         redisTemplate.opsForZSet().remove(FLASH_SALE_SESSIONS_KEY, sessionId);
     }

@@ -39,7 +39,8 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
                 "/auth/public/login",
                 "/auth/public/register",
                 "/auth/public/refresh",
-                "/auth/public/sendCode"
+                "/auth/public/sendCode",
+                "/search/public/product/search"
         );
 
 //        HEADERS = Set.of(
