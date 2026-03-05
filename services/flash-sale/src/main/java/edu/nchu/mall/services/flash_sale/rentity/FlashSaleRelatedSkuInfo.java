@@ -1,4 +1,4 @@
-package edu.nchu.mall.services.flash_sale.vo;
+package edu.nchu.mall.services.flash_sale.rentity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ public class FlashSaleRelatedSkuInfo {
     @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "活动id")
+    @Schema(description = "促销活动id")
     private Long promotionId;
 
     @Schema(description = "商品spu id")

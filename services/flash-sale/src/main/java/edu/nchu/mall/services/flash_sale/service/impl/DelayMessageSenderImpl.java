@@ -1,12 +1,12 @@
 package edu.nchu.mall.services.flash_sale.service.impl;
 
 import edu.nchu.mall.services.flash_sale.service.DelayMessageSender;
+import edu.nchu.mall.services.flash_sale.rentity.FlashSaleCleanupMessage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class DelayMessageSenderImpl implements DelayMessageSender {
@@ -15,7 +15,7 @@ public class DelayMessageSenderImpl implements DelayMessageSender {
     RabbitTemplate rabbitTemplate;
 
     @Override
-    public void sendDelayMessage(Object msg, LocalDateTime time) {
+    public void sendDelayMessage(FlashSaleCleanupMessage msg, LocalDateTime time) {
         final long delayMillis = java.time.Duration.between(LocalDateTime.now(), time).toMillis();
         rabbitTemplate.convertAndSend(
                 "flashsale.delay.exchange",

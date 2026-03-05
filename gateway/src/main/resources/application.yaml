@@ -85,7 +85,13 @@ spring:
             - Path=/coupon/**
           filters:
             - RewritePath=/coupon/?(?<segment>.*), /$\{segment}
-
+        - id: flash-sale
+          uri:
+            lb://flash-sale
+          predicates:
+            - Path=/flash-sale/**
+          filters:
+            - RewritePath=/flash-sale/?(?<segment>.*), /$\{segment}
 #logging:
 #  level:
 #    org.springframework.cloud.gateway: TRACE

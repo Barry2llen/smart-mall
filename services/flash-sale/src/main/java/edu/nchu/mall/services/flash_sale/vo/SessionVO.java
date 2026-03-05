@@ -1,18 +1,17 @@
 package edu.nchu.mall.services.flash_sale.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@AllArgsConstructor
+@Schema(description = "秒杀活动场次信息的VO对象")
 @NoArgsConstructor
-@Schema(description = "秒杀活动场次")
-public class FlashSaleSession {
-    @Schema(description = "id")
+public class SessionVO {
+    @Schema(description = "场次id")
     private Long id;
 
     @Schema(description = "场次名称")
@@ -24,9 +23,9 @@ public class FlashSaleSession {
     @Schema(description = "每日结束时间")
     private LocalDateTime endTime;
 
-    @Schema(description = "启用状态")
-    private Integer status;
-
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "秒杀活动场次关联的商品信息列表")
+    private List<SessionRelatedSkuInfoVO> skuInfos;
 }

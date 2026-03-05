@@ -31,9 +31,6 @@ public class RabbitConfig {
                     log.error("消息发送失败: {}", cause);
                 }
             });
-            rabbitTemplate.setReturnsCallback(msg -> {
-                log.error("消息进入队列失败：{}", msg);
-            });
         };
     }
 
@@ -64,7 +61,7 @@ public class RabbitConfig {
     public Binding bindingDelayed(Queue delayedQueue, CustomExchange delayedExchange) {
         return BindingBuilder.bind(delayedQueue)
                 .to(delayedExchange)
-                .with("flashsale.cleanup.#")
+                .with("flashsale.cleanup")
                 .noargs();
     }
 }

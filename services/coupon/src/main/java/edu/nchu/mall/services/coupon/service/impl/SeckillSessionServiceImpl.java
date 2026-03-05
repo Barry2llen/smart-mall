@@ -64,6 +64,7 @@ public class SeckillSessionServiceImpl extends ServiceImpl<SeckillSessionMapper,
         LocalDateTime threeDaysLater = now.plusDays(3).withHour(23).withMinute(59).withSecond(59).withNano(999999999);
         LambdaQueryWrapper<SeckillSession> qw = Wrappers.lambdaQuery();
         qw.between(SeckillSession::getStartTime, now, threeDaysLater)
+                .eq(SeckillSession::getStatus, 1)
                 .orderByAsc(SeckillSession::getStartTime);
 
         return super.list(qw).stream().map(session -> {
