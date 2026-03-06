@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import edu.nchu.mall.services.flash_sale.service.DelayMessageSender;
 import edu.nchu.mall.services.flash_sale.service.FlashSaleService;
-import edu.nchu.mall.services.flash_sale.service.impl.FlashSaleServiceImpl;
+import edu.nchu.mall.services.flash_sale.constants.RedisConstant;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleCleanupMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -45,7 +45,7 @@ public class CleanFlashSaleSessionListener {
             }
 
             String sessionIdStr = cleanupMessage.getSessionId().toString();
-            Object cleanupMetaObj = redisTemplate.opsForHash().get(FlashSaleServiceImpl.FLASH_SALE_CLEANUP_META_KEY, sessionIdStr);
+            Object cleanupMetaObj = redisTemplate.opsForHash().get(RedisConstant.FLASH_SALE_CLEANUP_META_KEY, sessionIdStr);
             if (cleanupMetaObj == null) {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
                 return;

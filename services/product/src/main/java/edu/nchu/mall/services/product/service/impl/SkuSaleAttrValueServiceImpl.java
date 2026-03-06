@@ -1,6 +1,7 @@
 package edu.nchu.mall.services.product.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.nchu.mall.components.utils.Entry;
 import edu.nchu.mall.models.entity.SkuSaleAttrValue;
 import edu.nchu.mall.services.product.dao.SkuSaleAttrValueMapper;
 import edu.nchu.mall.services.product.service.SkuSaleAttrValueService;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @CacheConfig(cacheNames = "skuSaleAttrValue")
@@ -89,5 +91,10 @@ public class SkuSaleAttrValueServiceImpl extends ServiceImpl<SkuSaleAttrValueMap
         });
 
         return res;
+    }
+
+    @Override
+    public Map<String, Long> getSpuSkuAttrsMapping(Long spuId) {
+        return baseMapper.getSkuAttrMappingBySpuId(spuId).stream().collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 }

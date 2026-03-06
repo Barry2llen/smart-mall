@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Schema(description = "商品详情信息")
@@ -24,7 +25,6 @@ public class SkuItemVO {
 
     @Schema(description = "spu商品规格参数")
     private List<SpuItemAttrGroupVO> groupAttrs;
-
 
     @Data
     @Schema(description = "spu商品属性")

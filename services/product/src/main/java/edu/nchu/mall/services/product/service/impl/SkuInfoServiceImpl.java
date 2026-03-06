@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.components.exception.CustomException;
+import edu.nchu.mall.components.utils.Entry;
 import edu.nchu.mall.components.utils.KeyUtils;
 import edu.nchu.mall.models.dto.SkuInfoDTO;
 import edu.nchu.mall.models.entity.ProductAttrValue;
@@ -209,15 +210,11 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoMapper, SkuInfo> impl
 
         CompletableFuture.allOf(skuInfoVO, images, spuInfoDesc, saleAttrs, groupAttrs, voidCompletableFuture).join();
 
-        try{
-            item.setSkuInfo(skuInfoVO.get());
-            item.setImages(images.get());
-            item.setDesp(spuInfoDesc.get());
-            item.setGroupAttrs(groupAttrs.get());
-            item.setSaleAttr(saleAttrs.get());
-        }catch (ExecutionException | InterruptedException e) {
-            throw new CustomException("查询失败", e, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        item.setSkuInfo(skuInfoVO.join());
+        item.setImages(images.join());
+        item.setDesp(spuInfoDesc.join());
+        item.setGroupAttrs(groupAttrs.join());
+        item.setSaleAttr(saleAttrs.join());
 
         return item;
     }

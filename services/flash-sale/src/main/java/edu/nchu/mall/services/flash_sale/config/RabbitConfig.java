@@ -1,6 +1,7 @@
 package edu.nchu.mall.services.flash_sale.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -22,13 +23,30 @@ public class RabbitConfig {
     }
 
     @Bean
-    RabbitTemplateCustomizer rabbitTemplateCustomizer() {
+    RabbitTemplateCustomizer rabbitTemplateCustomizer(MessageConverter messageConverter) {
         return rabbitTemplate -> {
             rabbitTemplate.setConfirmCallback((data, ack, cause) -> {
                 if (ack) {
                     log.info("消息发送成功");
                 } else {
-                    log.error("消息发送失败: {}", cause);
+                    ReturnedMessage returned = data.getReturned();
+                    byte[] body = returned.getMessage().getBody();
+
+                    Object obj = null;
+                    try {
+                        obj = messageConverter.fromMessage(returned.getMessage());
+                    } catch (Exception e) {
+                        log.error("消息转换失败: {}", e.getMessage());
+                    }
+
+                    switch (obj) {
+                        case FlashSaleOrder order -> {
+                            // TODO 重新发送或回滚订单
+                            log.error("创建订单消息发送失败: {}, 订单详情: {}", cause, order);
+                        }
+                        case null -> log.error("消息发送失败: {}", cause);
+                        default -> log.error("消息发送失败: {}, 消息内容: {}", cause, obj);
+                    }
                 }
             });
         };

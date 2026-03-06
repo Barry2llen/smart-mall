@@ -20,8 +20,8 @@ public class SessionRelatedSkuInfoVO {
     @Schema(description = "商品sku id")
     private Long skuId;
 
-//    @Schema(description = "秒杀随机码，唯一且不变，用于秒杀请求验证")
-//    private String randomCode;
+    @Schema(description = "秒杀随机码，唯一且不变，用于秒杀请求验证")
+    private String randomCode;
 
     @Schema(description = "秒杀价格")
     private BigDecimal seckillPrice;

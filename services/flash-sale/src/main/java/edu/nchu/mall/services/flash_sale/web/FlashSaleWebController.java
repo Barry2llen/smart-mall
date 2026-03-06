@@ -1,6 +1,8 @@
 package edu.nchu.mall.services.flash_sale.web;
 
+import edu.nchu.mall.models.annotation.bind.UserId;
 import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.services.flash_sale.rentity.FlashSaleSession;
 import edu.nchu.mall.services.flash_sale.service.FlashSaleService;
 import edu.nchu.mall.services.flash_sale.vo.SessionVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,10 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -41,6 +40,70 @@ public class FlashSaleWebController {
             return R.fail("pageNum must be >= 1 and pageSize must be between 1 and 100");
         }
         return R.success(flashSaleService.getSession(withExpired, withProducts, pageNum, pageSize));
+    }
+
+    @Parameters({@Parameter(description = "SKU主键", name = "skuId", required = true)})
+    @Operation(description = "检查某个SKU是否参与了秒杀活动")
+    @GetMapping("/sku/{skuId}/in-flash-sale")
+    public R<Boolean> isSkuInFlashSale(@PathVariable Long skuId) {
+        return R.success(flashSaleService.isSkuInFlashSale(skuId));
+    }
+
+    @Parameters({@Parameter(description = "SKU主键", name = "skuId", required = true)})
+    @Operation(description = "获取某个SKU参与的秒杀活动场次列表")
+    @GetMapping("/sku/{skuId}/sessions")
+    public R<List<FlashSaleSession>> getFlashSaleSessionsBySkuId(@PathVariable Long skuId) {
+        return R.success(flashSaleService.getFlashSaleSessionsBySkuId(skuId));
+    }
+
+    @Parameters({
+            @Parameter(description = "场次主键", name = "sessionId", required = true),
+            @Parameter(description = "是否包含商品信息，默认为false", name = "withProducts", required = false)
+    })
+    @Operation(description = "获取秒杀活动场次详情")
+    @GetMapping("/session/{sessionId}")
+    public R<SessionVO> getFlashSaleSessionById(
+            @PathVariable Long sessionId,
+            @RequestParam(required = false, defaultValue = "false") Boolean withProducts
+    ) {
+        return R.success(flashSaleService.getSessionById(sessionId, withProducts));
+    }
+
+    @Parameters({
+            @Parameter(description = "商品sku id", name = "skuId", required = true),
+            @Parameter(description = "秒杀随机码", name = "randomCode", required = true),
+            @Parameter(description = "秒杀场次id", name = "sessionId", required = true),
+            @Parameter(description = "购买数量", name = "num", required = true)
+    })
+    @Operation(description = "执行秒杀请求")
+    @GetMapping("/kill")
+    public R<?> kill(@UserId Long userId,
+                          @RequestParam Long skuId,
+                          @RequestParam String randomCode,
+                          @RequestParam Long sessionId,
+                          @RequestParam Integer num) {
+        R<?> res = null;
+        FlashSaleService.KillStatus status;
+
+        try {
+            status = flashSaleService.kill(userId, skuId, randomCode, sessionId, num);
+        } catch (Throwable e) {
+            status = FlashSaleService.KillStatus.ERROR;
+        }
+
+        switch (status) {
+            case SUCCEEDED ->  res = R.success(FlashSaleService.KillStatus.SUCCEEDED.getMessage(), FlashSaleService.ORDER.get().getOrderSn());
+            case ERROR -> {
+                res = R.fail(FlashSaleService.KillStatus.ERROR.getMessage());
+                if (FlashSaleService.ORDER.get() != null) {
+                    flashSaleService.deleteUserPurchaseRecord(userId, sessionId, skuId, randomCode, num);
+                }
+            }
+            default -> res = R.fail(status.getMessage());
+        }
+
+        FlashSaleService.ORDER.remove();
+        return res;
     }
 
 }

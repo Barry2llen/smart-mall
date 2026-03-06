@@ -21,4 +21,6 @@ public interface SkuSaleAttrValueService extends IService<SkuSaleAttrValue> {
     List<String> getSkuAttrValues(Long skuId);
 
     Map<Long, List<String>> getBatchSkuAttrValues(Collection<Long> skuIds);
+
+    Map<String, Long> getSpuSkuAttrsMapping(Long spuId);
 }

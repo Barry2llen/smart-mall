@@ -74,4 +74,14 @@ public class RabbitConfig {
     public Binding orderStockReleaseBinding() {
         return new Binding("stock.release.queue", Binding.DestinationType.QUEUE, "order.event.exchange", "order.stock.release.#", null);
     }
+
+    @Bean
+    public Queue orderFlashSaleQueue() {
+        return new Queue("order.flashsale.queue", true, false, false);
+    }
+
+    @Bean
+    public Binding orderFlashSaleBinding() {
+        return new Binding("order.flashsale.queue", Binding.DestinationType.QUEUE, "order.event.exchange", "order.create.flashsale.#", null);
+    }
 }

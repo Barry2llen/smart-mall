@@ -1,10 +1,13 @@
 package edu.nchu.mall.services.flash_sale.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.components.feign.coupon.CouponFeignClient;
 import edu.nchu.mall.components.feign.product.ProductFeignClient;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.model.Try;
+import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import edu.nchu.mall.models.vo.SeckillSessionVO;
 import edu.nchu.mall.models.vo.SeckillSkuRelationVO;
 import edu.nchu.mall.models.vo.SkuInfoVO;
@@ -13,15 +16,20 @@ import edu.nchu.mall.services.flash_sale.service.FlashSaleService;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleCleanupMessage;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleRelatedSkuInfo;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleSession;
+import edu.nchu.mall.services.flash_sale.constants.RedisConstant;
 import edu.nchu.mall.services.flash_sale.vo.SessionRelatedSkuInfoVO;
 import edu.nchu.mall.services.flash_sale.vo.SessionVO;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
 import org.redisson.api.RSemaphore;
 import org.redisson.api.RedissonClient;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.data.redis.core.BoundHashOperations;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
@@ -39,19 +48,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Comparator;
 import java.util.HexFormat;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RefreshScope
 public class FlashSaleServiceImpl implements FlashSaleService {
-
-    public static final String FLASH_SALE_SESSIONS_KEY = "flash_sale:sessions";
-    public static final String FLASH_SALE_SESSIONS_INFO_KEY = "flash_sale:sessions_info"; // 存储sessionId到FlashSaleSession的映射，方便查询
-    public static final String FLASH_SALE_SESSION_SKUS_KEY_PREFIX = "flash_sale:session_skus:"; // 后面跟sessionId
-    public static final String FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX = "flash_sale:semaphore:"; // 后面跟随机码，存储每个SKU的库存信号量
-    public static final String FLASH_SALE_SESSION_DIGEST_KEY = "flash_sale:session_digest"; // field: sessionId, value: session内容摘要
-    public static final String FLASH_SALE_CLEANUP_META_KEY = "flash_sale:cleanup_meta"; // field: sessionId, value: FlashSaleCleanupMessage
 
     @Value("${flashsale.cache.timeout-seconds:86400}") // 默认24小时
     private long flashSaleCacheTimeoutMs;
@@ -73,6 +76,9 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     @Autowired
     DelayMessageSender delayMessageSender;
+
+    @Autowired
+    RabbitTemplate rabbitTemplate;
 
     @Override
     public void uploadFlashSaleSkusToRedis_3d() throws Exception {
@@ -97,9 +103,9 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             }
 
             final String sessionIdStr = session.getId().toString();
-            final String sessionSkusKey = FLASH_SALE_SESSION_SKUS_KEY_PREFIX + session.getId();
+            final String sessionSkusKey = RedisConstant.FLASH_SALE_SESSION_SKUS_KEY_PREFIX + session.getId();
             final String newDigest = buildSessionDigest(session);
-            final Object oldDigestObj = redisTemplate.opsForHash().get(FLASH_SALE_SESSION_DIGEST_KEY, sessionIdStr);
+            final Object oldDigestObj = redisTemplate.opsForHash().get(RedisConstant.FLASH_SALE_SESSION_DIGEST_KEY, sessionIdStr);
             final String oldDigest = oldDigestObj == null ? null : oldDigestObj.toString();
             final boolean sessionSkusExists = Boolean.TRUE.equals(redisTemplate.hasKey(sessionSkusKey));
 
@@ -114,7 +120,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             }
 
             if (oldDigest != null && !oldDigest.equals(newDigest)) {
-                cleanupSemaphoresBySessionSkusHscan(session.getId().toString(), sessionSkusKey);
+                cleanupSemaphoresByHscan(session.getId().toString(), sessionSkusKey);
             }
 
             List<Long> skuIds = skuRelations.stream().map(SeckillSkuRelationVO::getSkuId).toList();
@@ -152,12 +158,16 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             BeanUtils.copyProperties(session, flashSaleSession);
 
             String sessionJson = mapper.writeValueAsString(flashSaleSession);
-            redisTemplate.opsForZSet().add(FLASH_SALE_SESSIONS_KEY, sessionIdStr, flashSaleSession.getEndTime().atZone(java.time.ZoneId.systemDefault()).toEpochSecond());
-            redisTemplate.opsForHash().put(FLASH_SALE_SESSIONS_INFO_KEY, sessionIdStr, sessionJson);
+            redisTemplate.opsForZSet().add(RedisConstant.FLASH_SALE_SESSIONS_KEY, sessionIdStr, flashSaleSession.getEndTime().atZone(java.time.ZoneId.systemDefault()).toEpochSecond());
+            redisTemplate.opsForHash().put(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY, sessionIdStr, sessionJson);
 
             skuInfos.forEach(each -> {
-                RSemaphore semaphore = redissonClient.getSemaphore(FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + each.getRandomCode());
+                // 每个参与秒杀的SKU都创建一个分布式信号量，信号量的permits数量就是秒杀库存数量
+                RSemaphore semaphore = redissonClient.getSemaphore(RedisConstant.FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + each.getRandomCode());
                 semaphore.trySetPermits(each.getSeckillCount());
+
+                // 创建sku与场次的关联，方便后续查询某个sku参与了哪些场次
+                redisTemplate.opsForHash().put(RedisConstant.FLASH_SALE_SKU_SESSIONS_KEY_PREFIX + each.getSkuId(), sessionIdStr, "1");
             });
 
             redisTemplate.opsForHash().putAll(sessionSkusKey, skuInfos.stream().collect(Collectors.toMap(info -> info.getSkuId().toString(), info -> {
@@ -169,12 +179,12 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                 }
             })));
 
-            redisTemplate.opsForHash().put(FLASH_SALE_SESSION_DIGEST_KEY, sessionIdStr, newDigest);
+            redisTemplate.opsForHash().put(RedisConstant.FLASH_SALE_SESSION_DIGEST_KEY, sessionIdStr, newDigest);
 
-//            LocalDateTime cleanTime = session.getEndTime().plusSeconds(flashSaleCacheTimeoutMs);
-            LocalDateTime cleanTime = LocalDateTime.now().plusSeconds(30);
+            LocalDateTime cleanTime = session.getEndTime().plusSeconds(flashSaleCacheTimeoutMs);
+            //LocalDateTime cleanTime = LocalDateTime.now().plusSeconds(15L); // 测试用，15秒后清理缓存
             FlashSaleCleanupMessage cleanupMessage = new FlashSaleCleanupMessage(session.getId(), newDigest, cleanTime);
-            redisTemplate.opsForHash().put(FLASH_SALE_CLEANUP_META_KEY, sessionIdStr, mapper.writeValueAsString(cleanupMessage));
+            redisTemplate.opsForHash().put(RedisConstant.FLASH_SALE_CLEANUP_META_KEY, sessionIdStr, mapper.writeValueAsString(cleanupMessage));
             delayMessageSender.sendDelayMessage(cleanupMessage, cleanTime);
         }
     }
@@ -208,7 +218,12 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         }
     }
 
-    private void cleanupSemaphoresBySessionSkusHscan(String sessionId, String sessionSkusKey) {
+    /**
+     * 通过HSCAN遍历某个场次的所有SKU信息，删除对应的库存信号量
+     * @param sessionId 场次ID
+     * @param sessionSkusKey 场次SKU信息在Redis中的key，即"flash_sale:session_skus:" + sessionId
+     */
+    private void cleanupSemaphoresByHscan(String sessionId, String sessionSkusKey) {
         ScanOptions scanOptions = ScanOptions.scanOptions().count(200).build();
         try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan(sessionSkusKey, scanOptions)) {
             while (cursor.hasNext()) {
@@ -220,7 +235,10 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                         log.warn("Skip deleting semaphore for session {} because randomCode is empty, skuField={}", sessionId, entry.getKey());
                         continue;
                     }
-                    redissonClient.getSemaphore(FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + randomCode).delete();
+                    redissonClient.getSemaphore(RedisConstant.FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + randomCode).delete();
+
+                    // 顺便删除sku与场次的关联
+                    cleanupSkuSessionsByHscan(skuInfo.getSkuId().toString(), sessionId);
                 } catch (Exception e) {
                     log.error("Failed to process SKU info during cache cleanup for session {} and skuField {}: {}", sessionId, entry.getKey(), e.getMessage(), e);
                 }
@@ -231,16 +249,16 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     @Override
     public void cleanFlashSaleSessionCache(String sessionId) {
         // 删除场次信息
-        redisTemplate.opsForHash().delete(FLASH_SALE_SESSIONS_INFO_KEY, sessionId);
+        redisTemplate.opsForHash().delete(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY, sessionId);
         // 删除库存信号量
-        final String sessionSkusKey = FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId;
-        cleanupSemaphoresBySessionSkusHscan(sessionId, sessionSkusKey);
+        final String sessionSkusKey = RedisConstant.FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId;
+        cleanupSemaphoresByHscan(sessionId, sessionSkusKey);
         // 删除商品信息
         redisTemplate.unlink(sessionSkusKey);
         // 从ZSet中删除场次ID
-        redisTemplate.opsForZSet().remove(FLASH_SALE_SESSIONS_KEY, sessionId);
-        redisTemplate.opsForHash().delete(FLASH_SALE_SESSION_DIGEST_KEY, sessionId);
-        redisTemplate.opsForHash().delete(FLASH_SALE_CLEANUP_META_KEY, sessionId);
+        redisTemplate.opsForZSet().remove(RedisConstant.FLASH_SALE_SESSIONS_KEY, sessionId);
+        redisTemplate.opsForHash().delete(RedisConstant.FLASH_SALE_SESSION_DIGEST_KEY, sessionId);
+        redisTemplate.opsForHash().delete(RedisConstant.FLASH_SALE_CLEANUP_META_KEY, sessionId);
     }
 
     @Override
@@ -253,8 +271,8 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         long nowEpochSecond = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
 
         var sessionIdSet = includeExpired
-                ? redisTemplate.opsForZSet().range(FLASH_SALE_SESSIONS_KEY, offset, offset + safePageSize - 1L)
-                : redisTemplate.opsForZSet().rangeByScore(FLASH_SALE_SESSIONS_KEY, nowEpochSecond, Double.POSITIVE_INFINITY, offset, safePageSize);
+                ? redisTemplate.opsForZSet().range(RedisConstant.FLASH_SALE_SESSIONS_KEY, offset, offset + safePageSize - 1L)
+                : redisTemplate.opsForZSet().rangeByScore(RedisConstant.FLASH_SALE_SESSIONS_KEY, nowEpochSecond, Double.POSITIVE_INFINITY, offset, safePageSize);
         if (sessionIdSet == null || sessionIdSet.isEmpty()) {
             return List.of();
         }
@@ -266,7 +284,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         if (sessionIdFields.isEmpty()) {
             return List.of();
         }
-        List<Object> sessionJsons = redisTemplate.opsForHash().multiGet(FLASH_SALE_SESSIONS_INFO_KEY, sessionIdFields);
+        List<Object> sessionJsons = redisTemplate.opsForHash().multiGet(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY, sessionIdFields);
         if (sessionJsons == null || sessionJsons.isEmpty()) {
             return List.of();
         }
@@ -293,7 +311,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             BeanUtils.copyProperties(flashSaleSession, sessionVO);
 
             if (includeProducts) {
-                String sessionSkusKey = FLASH_SALE_SESSION_SKUS_KEY_PREFIX + flashSaleSession.getId();
+                String sessionSkusKey = RedisConstant.FLASH_SALE_SESSION_SKUS_KEY_PREFIX + flashSaleSession.getId();
                 List<Object> skuJsons = redisTemplate.opsForHash().values(sessionSkusKey);
                 if (skuJsons.isEmpty()) {
                     sessionVO.setSkuInfos(List.of());
@@ -305,8 +323,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                         }
                         try {
                             FlashSaleRelatedSkuInfo skuInfo = mapper.readValue(skuJsonObj.toString(), FlashSaleRelatedSkuInfo.class);
-                            SessionRelatedSkuInfoVO skuInfoVO = new SessionRelatedSkuInfoVO();
-                            BeanUtils.copyProperties(skuInfo, skuInfoVO);
+                            SessionRelatedSkuInfoVO skuInfoVO = skuInfo2VO(flashSaleSession, skuInfo);
                             skuInfos.add(skuInfoVO);
                         } catch (Exception e) {
                             log.warn("Skip flash sale sku because sku detail parse failed, sessionId={}, payload={}", flashSaleSession.getId(), skuJsonObj, e);
@@ -326,5 +343,216 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         result.sort(Comparator.comparing(SessionVO::getStartTime, Comparator.nullsLast(LocalDateTime::compareTo))
                 .thenComparing(SessionVO::getId, Comparator.nullsLast(Long::compareTo)));
         return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public boolean isSkuInFlashSale(Long skuId) {
+        return redisTemplate.opsForHash().size(RedisConstant.FLASH_SALE_SKU_SESSIONS_KEY_PREFIX + skuId) > 0;
+    }
+
+    @Override
+    public List<FlashSaleSession> getFlashSaleSessionsBySkuId(Long skuId) {
+        // 这里直接一次性获取所有sessionId，因为应该不会有一个SKU参与非常多的场次
+        List<Object> sessionIds = redisTemplate.opsForHash().keys(RedisConstant.FLASH_SALE_SKU_SESSIONS_KEY_PREFIX + skuId).stream().toList();
+        if (sessionIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Object> sessionJsons = redisTemplate.opsForHash().multiGet(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY, sessionIds);
+        if (sessionJsons.isEmpty()) {
+            return List.of();
+        }
+
+        List<FlashSaleSession> sessions = new ArrayList<>();
+        sessionJsons.forEach(json -> {
+            FlashSaleSession flashSaleSession = null;
+            try {
+                flashSaleSession = mapper.readValue(json.toString(), FlashSaleSession.class);
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse flash sale session JSON for SKU {}, json {}: {}", skuId, json, e.getMessage(), e);
+            }
+
+            if (flashSaleSession != null) {
+                sessions.add(flashSaleSession);
+            }
+        });
+
+        return sessions;
+    }
+
+    @Override
+    public SessionVO getSessionById(Long sessionId, Boolean withProducts) {
+
+        // 拿到session信息
+        Object sessionJsonObj = redisTemplate.opsForHash().get(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY, sessionId.toString());
+        if (!(sessionJsonObj instanceof String s)) {
+            return null;
+        }
+
+        FlashSaleSession session = null;
+        try {
+            session = mapper.readValue(s, FlashSaleSession.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse flash sale session JSON for sessionId {}, json {}: {}", sessionId, s, e.getMessage(), e);
+            return null;
+        }
+
+        SessionVO sessionVO = new SessionVO();
+        sessionVO.setSkuInfos(new ArrayList<>());
+        BeanUtils.copyProperties(session, sessionVO);
+
+        if (!Boolean.TRUE.equals(withProducts)) {
+            return sessionVO;
+        }
+
+        ScanOptions scanOptions = ScanOptions.scanOptions().count(200).build();
+        final String sessionSkusKey = RedisConstant.FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId;
+        try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan(sessionSkusKey, scanOptions)) {
+            while (cursor.hasNext()) {
+                Map.Entry<Object, Object> entry = cursor.next();
+                try {
+                    FlashSaleRelatedSkuInfo skuInfo = mapper.readValue((String) entry.getValue(), FlashSaleRelatedSkuInfo.class);
+                    SessionRelatedSkuInfoVO skuInfoVO = skuInfo2VO(session, skuInfo);
+                    sessionVO.getSkuInfos().add(skuInfoVO);
+                } catch (Exception e) {
+                    log.error("Failed to parse flash sale SKU JSON for sessionId {}, entry {}: {}", sessionId, entry, e.getMessage(), e);
+                }
+            }
+        }
+
+        return sessionVO;
+    }
+
+    @Override
+    public KillStatus kill(Long userId, Long skuId, String randomCode, Long sessionId, Integer num) {
+        // 获取场次信息
+        FlashSaleSession session = null;
+        BoundHashOperations<String, String, String> hashOps = redisTemplate.boundHashOps(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY);
+        String sessionJson = hashOps.get(sessionId.toString());
+        if (sessionJson == null || sessionJson.isBlank()) {
+            return KillStatus.INVALID;
+        }
+
+        try {
+            session = mapper.readValue(sessionJson, FlashSaleSession.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse flash sale session JSON for kill request, sessionId {}, json {}: {}", sessionId, sessionJson, e.getMessage(), e);
+            return KillStatus.ERROR;
+        }
+
+        // 检验活动时间
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isAfter(session.getEndTime())) {
+            return KillStatus.ENDED;
+        } else if (now.isBefore(session.getStartTime())) {
+            return KillStatus.NOT_STARTED;
+        }
+
+        // 获取对应商品sku信息
+        hashOps = redisTemplate.boundHashOps(RedisConstant.FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId);
+        String skuJson = hashOps.get(skuId.toString());
+
+        if (skuJson == null || skuJson.isBlank()) {
+            return KillStatus.INVALID;
+        }
+
+        FlashSaleRelatedSkuInfo skuInfo = null;
+        try {
+            skuInfo = mapper.readValue(skuJson, FlashSaleRelatedSkuInfo.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse flash sale SKU JSON for kill request, sessionId {}, skuId {}, json {}: {}", sessionId, skuId, skuJson, e.getMessage(), e);
+            return KillStatus.ERROR;
+        }
+
+        // 检验随机码
+        if (!skuInfo.getRandomCode().equals(randomCode)) {
+            return KillStatus.INVALID;
+        }
+
+        if (num > skuInfo.getSeckillLimit()) {
+            return KillStatus.LIMIT_EXCEEDED;
+        }
+
+        // 锁住用户购买资格，防止同一用户发起大量请求
+        RLock lock = redissonClient.getLock(RedisConstant.getUserLockKey(userId, sessionId, skuId));
+        boolean lockAcquired = false;
+        try {
+            lockAcquired = lock.tryLock();
+            if (!lockAcquired) {
+                return KillStatus.INVALID;
+            }
+
+            // 检查用户购买记录，防止超过购买限制
+            String userPurchaseKey = RedisConstant.getUserPurchaseKey(userId, sessionId, skuId);
+            String cnt = redisTemplate.opsForValue().get(userPurchaseKey);
+            if (cnt != null && Integer.parseInt(cnt) + num > skuInfo.getSeckillLimit()) {
+                return KillStatus.LIMIT_EXCEEDED;
+            }
+
+            // 检查剩余库存，尝试获取信号量
+            RSemaphore semaphore = redissonClient.getSemaphore(RedisConstant.FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + randomCode);
+            boolean permitsAcquired = semaphore.tryAcquire(num);
+            if (!permitsAcquired) {
+                return KillStatus.STOCK_NOT_ENOUGH;
+            }
+
+            // 记录购买结果
+            long ttl = LocalDateTime.now().until(session.getEndTime(), ChronoUnit.MILLIS);
+            if (cnt == null) {
+                redisTemplate.opsForValue().set(userPurchaseKey, String.valueOf(num), ttl, TimeUnit.MICROSECONDS);
+            } else {
+                redisTemplate.opsForValue().increment(userPurchaseKey, num);
+            }
+
+            // TODO 向消息队列发送订单创建请求，异步创建订单
+            String orderSn = IdWorker.getTimeId();
+            FlashSaleOrder order = new FlashSaleOrder();
+            order.setOrderSn(orderSn);
+            order.setUserId(userId);
+            order.setSkuId(skuId);
+            order.setNum(num);
+            order.setSessionId(sessionId);
+            order.setRandomCode(skuInfo.getRandomCode());
+            order.setPrice(skuInfo.getSeckillPrice());
+            ORDER.set(order);
+
+            rabbitTemplate.convertAndSend("order.event.exchange", "order.create.flashsale", order);
+
+        } catch (AmqpException e) {
+            log.error("Failed to send flash sale order creation message to RabbitMQ for user {} on session {} and sku {}, this may cause duplicate order creation: {}", userId, sessionId, skuId, e.getMessage(), e);
+            return KillStatus.ERROR;
+        } catch (Throwable e) {
+            log.error("Unexpected error occurred during flash sale kill process for user {} on session {} and sku {}, this may cause duplicate order creation: {}", userId, sessionId, skuId, e.getMessage(), e);
+            return KillStatus.ERROR;
+        } finally {
+            if (lockAcquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+
+        return KillStatus.SUCCEEDED;
+    }
+
+    public void deleteUserPurchaseRecord(Long userId, Long sessionId, Long skuId, String randomCode, int num) {
+        redisTemplate.delete(RedisConstant.getUserPurchaseKey(userId, sessionId, skuId));
+        redissonClient.getSemaphore(RedisConstant.FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + randomCode).release(num);
+    }
+
+    /**
+     * 删除sku与场次的关联
+     * @param skuId skuId
+     * @param sessionId 场次id
+     */
+    private void cleanupSkuSessionsByHscan(String skuId, String sessionId) {
+        redisTemplate.opsForHash().delete(RedisConstant.FLASH_SALE_SKU_SESSIONS_KEY_PREFIX + skuId, sessionId);
+    }
+
+    private SessionRelatedSkuInfoVO skuInfo2VO(FlashSaleSession session, FlashSaleRelatedSkuInfo info) {
+        SessionRelatedSkuInfoVO skuInfoVO = new SessionRelatedSkuInfoVO();
+        BeanUtils.copyProperties(info, skuInfoVO);
+        if (session.getStartTime().isBefore(LocalDateTime.now())) {
+            skuInfoVO.setRandomCode(null); // 如果活动已经开始，出于安全考虑不返回随机码
+        }
+        return skuInfoVO;
     }
 }

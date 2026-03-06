@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.function.Function;
+
 /**
  * 统一封装 http请求 返回格式
  * @param <T> 数据类型（可选）
@@ -51,5 +53,37 @@ public class R<T>{
 
     public static R<?> result(boolean res) {
         return res ? R.success() : R.fail();
+    }
+
+    public static <T> R<T> result(boolean res, String failMsg) {
+        return res ? R.success() : R.fail(failMsg);
+    }
+
+    public static <T> R<T> result(T t) {
+        return t != null ? R.success(t) : R.fail();
+    }
+
+    public static <T> R<T> result(T t, String failMsg) {
+        return t != null ? R.success(t) : R.fail(failMsg);
+    }
+
+    public static <T> R<T> result(T expected, T actual) {
+        return expected.equals(actual) ? R.success(actual) : R.fail();
+    }
+
+    public static <T> R<T> result(T expected, T actual, String failMsg) {
+        return expected.equals(actual) ? R.success(actual) : R.fail(failMsg);
+    }
+
+    public static <T> R<T> result(T expected, T actual, Function<T, String> failMsgFunc) {
+        return expected.equals(actual) ? R.success(actual) : R.fail(failMsgFunc.apply(actual));
+    }
+
+    public static <T> R<T> result(T actual, Function<T, Boolean> successFunc) {
+        return successFunc.apply(actual) ? R.success(actual) : R.fail();
+    }
+
+    public static <T> R<T> result(T actual, Function<T, Boolean> successFunc, Function<T, String> failMsgFunc) {
+        return successFunc.apply(actual) ? R.success(actual) : R.fail(failMsgFunc.apply(actual));
     }
 }

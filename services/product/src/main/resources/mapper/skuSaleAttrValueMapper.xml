@@ -26,4 +26,11 @@
         </foreach>
         GROUP BY sku_id;
     </select>
+    <select id="getSkuAttrMappingBySpuId" resultType="edu.nchu.mall.components.utils.Entry">
+        SELECT GROUP_CONCAT(CONCAT(A.attr_id,':',A.attr_value) ORDER BY A.attr_id ASC SEPARATOR '_') AS 'key', A.sku_id AS 'value'
+        FROM `pms_sku_sale_attr_value` AS A
+        WHERE A.sku_id IN
+              (SELECT sku_id FROM `pms_sku_info` WHERE spu_id = #{spuId})
+        GROUP BY A.sku_id
+    </select>
 </mapper>

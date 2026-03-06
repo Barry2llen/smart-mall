@@ -23,6 +23,6 @@ public class SpuInfoDesc {
     private Long spuId;
 
     @TableField("decript")
-    @Schema(description = "商品介绍")
+    @Schema(description = "商品介绍图片（长图）")
     private String decript;
 }
