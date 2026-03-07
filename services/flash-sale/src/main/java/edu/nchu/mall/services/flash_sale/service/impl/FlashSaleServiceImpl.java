@@ -4,19 +4,26 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.components.feign.coupon.CouponFeignClient;
+import edu.nchu.mall.components.feign.member.MemberFeignClient;
 import edu.nchu.mall.components.feign.product.ProductFeignClient;
+import edu.nchu.mall.models.entity.MemberReceiveAddress;
+import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.model.Try;
 import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import edu.nchu.mall.models.vo.SeckillSessionVO;
 import edu.nchu.mall.models.vo.SeckillSkuRelationVO;
 import edu.nchu.mall.models.vo.SkuInfoVO;
+import edu.nchu.mall.services.flash_sale.dto.Kill;
+import edu.nchu.mall.services.flash_sale.rentity.UserInfo;
 import edu.nchu.mall.services.flash_sale.service.DelayMessageSender;
 import edu.nchu.mall.services.flash_sale.service.FlashSaleService;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleCleanupMessage;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleRelatedSkuInfo;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleSession;
 import edu.nchu.mall.services.flash_sale.constants.RedisConstant;
+import edu.nchu.mall.services.flash_sale.vo.OrderConfirm;
+import edu.nchu.mall.services.flash_sale.vo.OrderItem;
 import edu.nchu.mall.services.flash_sale.vo.SessionRelatedSkuInfoVO;
 import edu.nchu.mall.services.flash_sale.vo.SessionVO;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +73,9 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     CouponFeignClient couponFeignClient;
 
     @Autowired
+    MemberFeignClient memberFeignClient;
+
+    @Autowired
     StringRedisTemplate redisTemplate;
 
     @Autowired
@@ -90,6 +100,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
         // 将数据存入Redis，使用ZSet以结束时间为score，方便后续查询即将结束的活动
         List<SeckillSessionVO> sessions = rTry.getValue().getData();
+
         for (SeckillSessionVO session : sessions) {
             if (session == null || session.getId() == null || session.getStartTime() == null || session.getEndTime() == null) {
                 log.warn("Skip loading flash sale session because required fields are missing: {}", session);
@@ -346,8 +357,12 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
-    public boolean isSkuInFlashSale(Long skuId) {
-        return redisTemplate.opsForHash().size(RedisConstant.FLASH_SALE_SKU_SESSIONS_KEY_PREFIX + skuId) > 0;
+    public boolean isSkuInFlashSale(Long userId, Long skuId) {
+        boolean res =  redisTemplate.opsForHash().size(RedisConstant.FLASH_SALE_SKU_SESSIONS_KEY_PREFIX + skuId) > 0;
+        if (res) {
+            preCacheUserInfo(userId);
+        }
+        return res;
     }
 
     @Override
@@ -424,7 +439,59 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     }
 
     @Override
-    public KillStatus kill(Long userId, Long skuId, String randomCode, Long sessionId, Integer num) {
+    public OrderConfirm confirmOrder(Long userId, Long sessionId, Long skuId, int num) {
+        // 获取对应商品sku信息
+        BoundHashOperations<String, String, String> hashOps = redisTemplate.boundHashOps(RedisConstant.FLASH_SALE_SESSION_SKUS_KEY_PREFIX + sessionId);
+        String skuJson = hashOps.get(skuId.toString());
+
+        if (skuJson == null || skuJson.isBlank()) {
+            return null;
+        }
+
+        FlashSaleRelatedSkuInfo skuInfo = null;
+        try {
+            skuInfo = mapper.readValue(skuJson, FlashSaleRelatedSkuInfo.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse flash sale SKU JSON for kill request, sessionId {}, skuId {}, json {}: {}", sessionId, skuId, skuJson, e.getMessage(), e);
+            return null;
+        }
+
+        // 用户信息
+        String userInfoJson = redisTemplate.opsForValue().get(RedisConstant.FLASH_SALE_USER_INFO_KEY_PREFIX + userId);
+        if (userInfoJson == null || userInfoJson.isBlank()) {
+            return null;
+        }
+
+        UserInfo userInfo = null;
+        try {
+            userInfo = mapper.readValue(userInfoJson, UserInfo.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse user info JSON for kill request, userId {}, json {}: {}", userId, userInfoJson, e.getMessage(), e);
+            return null;
+        }
+
+        OrderItem item = new OrderItem();
+        BeanUtils.copyProperties(skuInfo, item);
+        item.setTitle(skuInfo.getSkuTitle());
+        item.setImage(skuInfo.getSkuDefaultImg());
+        item.setPrice(skuInfo.getSeckillPrice());
+        item.setCount(num);
+
+        OrderConfirm confirm = new OrderConfirm();
+        confirm.setAddresses(userInfo.getAddresses());
+        confirm.setItem(item);
+
+        return confirm;
+    }
+
+    @Override
+    public KillStatus kill(Long userId, Kill dto) {
+
+        Long sessionId = dto.getSessionId();
+        Long skuId = dto.getSkuId();
+        String randomCode = dto.getRandomCode();
+        int num = dto.getNum();
+
         // 获取场次信息
         FlashSaleSession session = null;
         BoundHashOperations<String, String, String> hashOps = redisTemplate.boundHashOps(RedisConstant.FLASH_SALE_SESSIONS_INFO_KEY);
@@ -473,6 +540,26 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             return KillStatus.LIMIT_EXCEEDED;
         }
 
+        // 检验用户信息
+        String userInfoJson = redisTemplate.opsForValue().get(RedisConstant.FLASH_SALE_USER_INFO_KEY_PREFIX + userId);
+        if (userInfoJson == null || userInfoJson.isBlank()) {
+            // 如果用户信息不存在，说明用户没有访问过秒杀相关接口，可能是恶意请求或者缓存过期了，直接拒绝请求
+            return KillStatus.OPERATION_TOO_FREQUENT;
+        }
+
+        UserInfo userInfo = null;
+        try {
+            userInfo = mapper.readValue(userInfoJson, UserInfo.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse user info JSON for kill request, userId {}, json {}: {}", userId, userInfoJson, e.getMessage(), e);
+            return KillStatus.ERROR;
+        }
+
+        if (dto.getAddressId() != null && userInfo.getAddresses().stream().map(MemberReceiveAddress::getId).noneMatch(addrId -> addrId.equals(dto.getAddressId()))) {
+            // 如果用户提供的地址ID不在用户的地址列表中，说明可能是恶意请求，直接拒绝
+            return KillStatus.INVALID;
+        }
+
         // 锁住用户购买资格，防止同一用户发起大量请求
         RLock lock = redissonClient.getLock(RedisConstant.getUserLockKey(userId, sessionId, skuId));
         boolean lockAcquired = false;
@@ -499,24 +586,25 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             // 记录购买结果
             long ttl = LocalDateTime.now().until(session.getEndTime(), ChronoUnit.MILLIS);
             if (cnt == null) {
-                redisTemplate.opsForValue().set(userPurchaseKey, String.valueOf(num), ttl, TimeUnit.MICROSECONDS);
+                redisTemplate.opsForValue().set(userPurchaseKey, String.valueOf(num), ttl, TimeUnit.MILLISECONDS);
             } else {
                 redisTemplate.opsForValue().increment(userPurchaseKey, num);
             }
 
-            // TODO 向消息队列发送订单创建请求，异步创建订单
             String orderSn = IdWorker.getTimeId();
             FlashSaleOrder order = new FlashSaleOrder();
+            BeanUtils.copyProperties(skuInfo, order);
             order.setOrderSn(orderSn);
             order.setUserId(userId);
-            order.setSkuId(skuId);
             order.setNum(num);
             order.setSessionId(sessionId);
             order.setRandomCode(skuInfo.getRandomCode());
             order.setPrice(skuInfo.getSeckillPrice());
+            order.setAddressId(dto.getAddressId());
+            order.setNote(dto.getNote());
             ORDER.set(order);
 
-            rabbitTemplate.convertAndSend("order.event.exchange", "order.create.flashsale", order);
+            rabbitTemplate.convertAndSend("order.event.exchange", "order.flashsale.create", order);
 
         } catch (AmqpException e) {
             log.error("Failed to send flash sale order creation message to RabbitMQ for user {} on session {} and sku {}, this may cause duplicate order creation: {}", userId, sessionId, skuId, e.getMessage(), e);
@@ -538,6 +626,50 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         redissonClient.getSemaphore(RedisConstant.FLASH_SALE_SKU_SEMAPHORE_KEY_PREFIX + randomCode).release(num);
     }
 
+    @Override
+    public Thread preCacheUserInfo(Long userId) {
+        // 新开一个线程异步执行，避免阻塞当前线程
+        return Thread.ofVirtual().start(() -> {
+            Boolean exists = redisTemplate.hasKey(RedisConstant.FLASH_SALE_USER_INFO_KEY_PREFIX + userId);
+            if (!exists) {
+                cacheUserInfo(userId);
+            }
+        });
+    }
+
+    @Override
+    public Thread reCacheUserInfo(Long userId) {
+        // 新开一个线程异步执行，避免阻塞当前线程
+        return Thread.ofVirtual().start(() -> {
+            Boolean exists = redisTemplate.hasKey(RedisConstant.FLASH_SALE_USER_INFO_KEY_PREFIX + userId);
+            if (exists) {
+                cacheUserInfo(userId);
+            }
+        });
+    }
+
+    /**
+     * 从会员服务查询用户信息并缓存到Redis中，缓存有效期为1天
+     * @param userId 用户ID
+     */
+    private void cacheUserInfo(Long userId) {
+        var rTry = Try.of(memberFeignClient::getMemberReceiveAddress, userId);
+        if (rTry.failed() || rTry.getValue().getCode() != RCT.SUCCESS) {
+            log.error("Failed to fetch user receive address for user {}: {}", userId, rTry.getValue() == null ? rTry.getEx().getMessage() : rTry.getValue().getMsg(), rTry.getEx());
+            return;
+        }
+
+        UserInfo info = new UserInfo();
+        info.setAddresses(rTry.getValue().getData());
+
+        try {
+            String json = mapper.writeValueAsString(info);
+            redisTemplate.opsForValue().set(RedisConstant.FLASH_SALE_USER_INFO_KEY_PREFIX + userId, json, 1, TimeUnit.DAYS);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize user info for user {}: {}", userId, e.getMessage(), e);
+        }
+    }
+
     /**
      * 删除sku与场次的关联
      * @param skuId skuId
@@ -550,8 +682,8 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     private SessionRelatedSkuInfoVO skuInfo2VO(FlashSaleSession session, FlashSaleRelatedSkuInfo info) {
         SessionRelatedSkuInfoVO skuInfoVO = new SessionRelatedSkuInfoVO();
         BeanUtils.copyProperties(info, skuInfoVO);
-        if (session.getStartTime().isBefore(LocalDateTime.now())) {
-            skuInfoVO.setRandomCode(null); // 如果活动已经开始，出于安全考虑不返回随机码
+        if (!session.getStartTime().isBefore(LocalDateTime.now())) {
+            skuInfoVO.setRandomCode(null); // 如果活动未开始，不返回随机码
         }
         return skuInfoVO;
     }

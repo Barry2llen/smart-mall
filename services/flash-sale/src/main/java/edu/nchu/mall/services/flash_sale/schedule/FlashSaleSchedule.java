@@ -1,5 +1,7 @@
 package edu.nchu.mall.services.flash_sale.schedule;
 
+import edu.nchu.mall.components.notice.event.impl.HelloEvent;
+import edu.nchu.mall.models.annotation.notice.Notice;
 import edu.nchu.mall.services.flash_sale.service.FlashSaleService;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -20,7 +22,7 @@ public class FlashSaleSchedule {
 
     public static final String CRON_EXPRESSION = "0 0 0 * * ?"; // 每天凌晨执行一次
     public static final String CRON_EXPRESSION_TEST1 = "0/10 * * * * ?"; // 每10秒执行一次（测试用）
-    public static final String CRON_EXPRESSION_TEST2 = "0 53 15 * * ?";
+    public static final String CRON_EXPRESSION_TEST2 = "0 30 21 * * ?";
 
     public static final String LOAD_FLASH_SALE_LOCK_KEY = "flash_sale:load_lock";
     public static final String LOAD_FLASH_SALE_WINDOW_KEY_PREFIX = "flash_sale:load:window:";

@@ -2,6 +2,7 @@ package edu.nchu.mall.services.order.listener;
 
 import com.rabbitmq.client.Channel;
 import edu.nchu.mall.models.entity.Order;
+import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import edu.nchu.mall.services.order.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -31,10 +32,18 @@ public class OrderReleaseListener {
         log.info("取消订单[sn={}]", order.getOrderSn());
 
         try {
+            FlashSaleOrder initialFlashSaleOrder = order.getInitialFlashSaleOrder();
+            boolean isFlashSaleOrder = order.isFlashSaleOrder();
+
             order = orderService.releaseOrder(order.getId());
             if (order != null) {
                 // 发送消息通知库存解锁
                 rabbitTemplate.convertAndSend("order.event.exchange", "order.stock.release", order);
+
+                if (isFlashSaleOrder) {
+                    // 发送消息通知秒杀订单取消
+                    rabbitTemplate.convertAndSend("flashsale.event.exchange", "flashsale.cancel", initialFlashSaleOrder);
+                }
             }
         } catch (Exception e) {
             log.error("取消订单[sn={}]失败", order.getOrderSn(), e);

@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.fasterxml.jackson.annotation.JsonValue;
 import edu.nchu.mall.models.entity.Order;
 import edu.nchu.mall.models.enums.OrderStatus;
+import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import edu.nchu.mall.models.vo.PayVo;
+import edu.nchu.mall.services.order.dto.FlashSaleOrderSubmit;
 import edu.nchu.mall.services.order.dto.OrderSubmit;
 import edu.nchu.mall.services.order.vo.OrderConfirm;
 import edu.nchu.mall.services.order.vo.OrderWithItems;
@@ -19,6 +21,8 @@ public interface OrderService extends IService<Order> {
     OrderConfirm confirmOrder(Long memberId);
 
     OrderSubmitStatus submitOrder(Long memberId, OrderSubmit orderSubmit);
+
+    OrderSubmitStatus submitFlashSaleOrder(Long memberId, FlashSaleOrderSubmit orderSubmit, FlashSaleOrder flashSaleOrder);
 
     Order getBySn(String sn);
 

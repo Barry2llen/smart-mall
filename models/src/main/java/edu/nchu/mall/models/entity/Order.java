@@ -10,6 +10,7 @@ import edu.nchu.mall.models.enums.BillType;
 import edu.nchu.mall.models.enums.OrderSource;
 import edu.nchu.mall.models.enums.OrderStatus;
 import edu.nchu.mall.models.enums.Payment;
+import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,6 +25,12 @@ import java.time.LocalDateTime;
 @TableName("oms_order")
 @Schema(description = "订单")
 public class Order {
+
+    @TableField(exist = false)
+    private boolean isFlashSaleOrder;
+
+    @TableField(exist = false)
+    private FlashSaleOrder initialFlashSaleOrder;
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Schema(description = "id")

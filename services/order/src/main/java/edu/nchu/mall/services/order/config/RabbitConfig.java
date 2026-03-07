@@ -82,6 +82,6 @@ public class RabbitConfig {
 
     @Bean
     public Binding orderFlashSaleBinding() {
-        return new Binding("order.flashsale.queue", Binding.DestinationType.QUEUE, "order.event.exchange", "order.create.flashsale.#", null);
+        return new Binding("order.flashsale.queue", Binding.DestinationType.QUEUE, "order.event.exchange", "order.flashsale.create.#", null);
     }
 }

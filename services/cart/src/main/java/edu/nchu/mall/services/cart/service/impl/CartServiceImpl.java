@@ -79,7 +79,7 @@ public class CartServiceImpl implements CartService {
             } catch (JsonProcessingException e) {
                 throw new CustomException("无法反序列化购物项");
             }
-        }).sorted(Comparator.comparing(CartItem::getTime)).toList();
+        }).sorted(Comparator.comparing(CartItem::getTime).reversed()).toList();
 
         List<Long> ids = items.stream().map(CartItem::getSkuId).toList();
 

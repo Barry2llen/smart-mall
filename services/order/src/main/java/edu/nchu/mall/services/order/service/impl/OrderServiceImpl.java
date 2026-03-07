@@ -22,13 +22,17 @@ import edu.nchu.mall.models.entity.Order;
 import edu.nchu.mall.models.entity.OrderItem;
 import edu.nchu.mall.models.entity.PaymentInfo;
 import edu.nchu.mall.models.enums.OrderStatus;
+import edu.nchu.mall.models.enums.Payment;
 import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.models.model.RCT;
 import edu.nchu.mall.models.model.Try;
+import edu.nchu.mall.models.to.mq.FlashSaleOrder;
 import edu.nchu.mall.models.vo.CartItemVO;
 import edu.nchu.mall.models.vo.PayVo;
 import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.order.constants.RedisConstant;
 import edu.nchu.mall.services.order.dao.OrderMapper;
+import edu.nchu.mall.services.order.dto.FlashSaleOrderSubmit;
 import edu.nchu.mall.services.order.dto.OrderSubmit;
 import edu.nchu.mall.services.order.exception.StockNotEnoughException;
 import edu.nchu.mall.services.order.service.OrderItemService;
@@ -457,7 +461,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         List<OrderItem> items = cartItems.stream()
                 .map(item -> buildOrderItem(item, order_sn, spuInfos.get(item.getSpuId()), spuImages.get(item.getSpuId()))).toList();
 
-        Order order = createOrder(memberId, memberTry.getValue().getUsername(), order_sn, orderSubmit, address, items);
+        Order order = createOrder(memberId, memberTry.getValue().getUsername(), order_sn, orderSubmit.getPayment(), orderSubmit.getNotes(), address, items);
 
         // 验价
         if (order.getTotalAmount().compareTo(orderSubmit.getPrice()) != 0) {
@@ -476,6 +480,61 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         OrderContext.ORDER_SN.set(order_sn);
         return OrderSubmitStatus.OK;
 
+    }
+
+    @Override
+    public OrderSubmitStatus submitFlashSaleOrder(Long memberId, FlashSaleOrderSubmit orderSubmit, FlashSaleOrder flashSaleOrder) {
+        var self = ((OrderServiceImpl) AopContext.currentProxy());
+
+        // 获取收货地址信息
+        var addrTask = callTaskUtils.rcall(() -> memberFeignClient.getMemberReceiveAddress(orderSubmit.getAddrId(), memberId));
+        // 获取会员信息
+        var memberTask = callTaskUtils.rcall(() -> memberFeignClient.getMember(memberId));
+
+        CompletableFuture.allOf(addrTask, memberTask).join();
+        var addrTry = addrTask.join();
+        var memberTry = memberTask.join();
+
+        if (!Try.allSucceeded(addrTry, memberTry)) {
+            return OrderSubmitStatus.ERROR;
+        }
+
+        List<Long> ids = List.of(orderSubmit.getSpuId());
+
+        //获取spu信息
+        var spuTask = callTaskUtils.rcall(() -> productFeignClient.getSpuInfoBatch(ids));
+        //获取sku属性信息
+        var skuAttrTask = callTaskUtils.rcall(() -> productFeignClient.getSkuAttrValues(orderSubmit.getSkuId()));
+
+        CompletableFuture.allOf(spuTask, skuAttrTask).join();
+
+        var spuTry = spuTask.join();
+        var skuAttrTry = skuAttrTask.join();
+
+        if (!Try.allSucceeded(spuTry, skuAttrTry) || spuTry.getValue().size() != 1) {
+            return OrderSubmitStatus.ERROR;
+        }
+
+        var spuInfo = spuTry.getValue().get(ids.getFirst());
+        var skuAttrs = skuAttrTry.getValue();
+
+        MemberReceiveAddress address = addrTry.getValue();
+        List<OrderItem> items = List.of(buildOrderItem(orderSubmit, spuInfo, orderSubmit.getSkuDefaultImg(), skuAttrs));
+
+        Order order = createOrder(memberId, memberTry.getValue().getUsername(), orderSubmit.getOrderSn(), orderSubmit.getPayment(), orderSubmit.getNotes(), address, items);
+        order.setInitialFlashSaleOrder(flashSaleOrder);
+        order.setFlashSaleOrder(true);
+
+        // 保存订单
+        try {
+            self.saveOrder(order, address, items);
+        } catch (StockNotEnoughException ex) {
+            return OrderSubmitStatus.NOT_ENOUGH_STOCK;
+        } catch (CustomException | AmqpException e) {
+            return OrderSubmitStatus.ERROR;
+        }
+
+        return OrderSubmitStatus.OK;
     }
 
     //@GlobalTransactional
@@ -501,7 +560,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         rabbitTemplate.convertAndSend("order.event.exchange", "order.create", order);
     }
 
-    private Order createOrder(Long memberId, String username, String order_sn, OrderSubmit orderSubmit, MemberReceiveAddress address, List<OrderItem> items) {
+    private Order createOrder(Long memberId, String username, String order_sn, Payment payment, String notes, MemberReceiveAddress address, List<OrderItem> items) {
         Order order = new Order();
         order.setMemberId(memberId);
         order.setOrderSn(order_sn);
@@ -517,7 +576,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setIntegrationAmount(items.stream().map(OrderItem::getIntegrationAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
         order.setCouponAmount(items.stream().map(OrderItem::getCouponAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
         order.setDiscountAmount(BigDecimal.ZERO);
-        order.setPayType(orderSubmit.getPayment());
+        order.setPayType(payment);
         order.setStatus(OrderStatus.UNPAID);
         order.setAutoConfirmDay(7);
         order.setIntegration(items.stream().map(OrderItem::getGiftIntegration).reduce(0, Integer::sum));
@@ -529,7 +588,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setReceiverCity(address.getCity());
         order.setReceiverRegion(address.getRegion());
         order.setReceiverDetailAddress(address.getDetailAddress());
-        order.setNote(orderSubmit.getNotes());
+        order.setNote(notes);
         order.setConfirmStatus(0);
         order.setDeleteStatus(0);
         return order;
@@ -550,6 +609,24 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         orderItem.setSkuName(item.getTitle());
         orderItem.setSkuPic(item.getImage());
         orderItem.setSkuAttrsVals(String.join("/", item.getSkuAttr()));
+        return orderItem;
+    }
+
+    private OrderItem buildOrderItem(FlashSaleOrderSubmit orderSubmit, SpuInfoVO spuInfo, String spuDefaultImg, List<String> skuAttrs) {
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderSn(orderSubmit.getOrderSn());
+        orderItem.setSpuBrand(spuInfo.getBrandName());
+        orderItem.setCategoryId(spuInfo.getCatalogId());
+        orderItem.setSpuName(spuInfo.getSpuName());
+        orderItem.setSpuPic(spuDefaultImg);
+        orderItem.setSkuQuantity(orderSubmit.getNum());
+        orderItem.setSkuPrice(orderSubmit.getPrice());
+        orderItem.setSpuId(orderSubmit.getSpuId());
+        orderItem.setSpuName(spuInfo.getSpuName());
+        orderItem.setSkuId(orderSubmit.getSkuId());
+        orderItem.setSkuName(orderSubmit.getSkuName());
+        orderItem.setSkuPic(orderSubmit.getSkuDefaultImg());
+        orderItem.setSkuAttrsVals(String.join("/", skuAttrs));
         return orderItem;
     }
 

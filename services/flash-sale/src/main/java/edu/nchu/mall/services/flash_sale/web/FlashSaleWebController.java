@@ -2,8 +2,10 @@ package edu.nchu.mall.services.flash_sale.web;
 
 import edu.nchu.mall.models.annotation.bind.UserId;
 import edu.nchu.mall.models.model.R;
+import edu.nchu.mall.services.flash_sale.dto.Kill;
 import edu.nchu.mall.services.flash_sale.rentity.FlashSaleSession;
 import edu.nchu.mall.services.flash_sale.service.FlashSaleService;
+import edu.nchu.mall.services.flash_sale.vo.OrderConfirm;
 import edu.nchu.mall.services.flash_sale.vo.SessionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,8 +47,8 @@ public class FlashSaleWebController {
     @Parameters({@Parameter(description = "SKU主键", name = "skuId", required = true)})
     @Operation(description = "检查某个SKU是否参与了秒杀活动")
     @GetMapping("/sku/{skuId}/in-flash-sale")
-    public R<Boolean> isSkuInFlashSale(@PathVariable Long skuId) {
-        return R.success(flashSaleService.isSkuInFlashSale(skuId));
+    public R<Boolean> isSkuInFlashSale(@UserId Long userId, @PathVariable Long skuId) {
+        return R.success(flashSaleService.isSkuInFlashSale(userId, skuId));
     }
 
     @Parameters({@Parameter(description = "SKU主键", name = "skuId", required = true)})
@@ -70,23 +72,31 @@ public class FlashSaleWebController {
     }
 
     @Parameters({
+            @Parameter(description = "场次主键", name = "sessionId", required = true),
+            @Parameter(description = "商品主键", name = "skuId", required = true),
+            @Parameter(description = "购买数量", name = "num", required = true)
+    })
+    @Operation(description = "确认秒杀订单信息")
+    @GetMapping
+    public R<OrderConfirm> confirmOrder(@UserId Long userId, @RequestParam Long sessionId, @RequestParam Long skuId, @RequestParam int num) {
+        OrderConfirm orderConfirm = flashSaleService.confirmOrder(userId, sessionId, skuId, num);
+        return R.result(orderConfirm);
+    }
+
+    @Parameters({
             @Parameter(description = "商品sku id", name = "skuId", required = true),
             @Parameter(description = "秒杀随机码", name = "randomCode", required = true),
             @Parameter(description = "秒杀场次id", name = "sessionId", required = true),
             @Parameter(description = "购买数量", name = "num", required = true)
     })
     @Operation(description = "执行秒杀请求")
-    @GetMapping("/kill")
-    public R<?> kill(@UserId Long userId,
-                          @RequestParam Long skuId,
-                          @RequestParam String randomCode,
-                          @RequestParam Long sessionId,
-                          @RequestParam Integer num) {
+    @PostMapping("/kill")
+    public R<?> kill(@UserId Long userId, @RequestBody Kill dto) {
         R<?> res = null;
         FlashSaleService.KillStatus status;
 
         try {
-            status = flashSaleService.kill(userId, skuId, randomCode, sessionId, num);
+            status = flashSaleService.kill(userId, dto);
         } catch (Throwable e) {
             status = FlashSaleService.KillStatus.ERROR;
         }
@@ -96,7 +106,7 @@ public class FlashSaleWebController {
             case ERROR -> {
                 res = R.fail(FlashSaleService.KillStatus.ERROR.getMessage());
                 if (FlashSaleService.ORDER.get() != null) {
-                    flashSaleService.deleteUserPurchaseRecord(userId, sessionId, skuId, randomCode, num);
+                    flashSaleService.deleteUserPurchaseRecord(userId, dto.getSessionId(), dto.getSkuId(), dto.getRandomCode(), dto.getNum());
                 }
             }
             default -> res = R.fail(status.getMessage());

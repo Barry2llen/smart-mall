@@ -2,10 +2,12 @@ package edu.nchu.mall.services.member.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import edu.nchu.mall.models.annotation.notice.Notice;
 import edu.nchu.mall.models.dto.MemberReceiveAddressDTO;
 import edu.nchu.mall.models.entity.MemberReceiveAddress;
 import edu.nchu.mall.models.vo.MemberReceiveAddressVO;
 import edu.nchu.mall.services.member.dao.MemberReceiveAddressMapper;
+import edu.nchu.mall.services.member.notice.event.impl.FlashSaleUserInfoChanged;
 import edu.nchu.mall.services.member.service.MemberReceiveAddressService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheConfig;
@@ -22,6 +24,7 @@ import java.util.List;
 public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAddressMapper, MemberReceiveAddress> implements MemberReceiveAddressService {
 
     @Override
+    @Notice(event = FlashSaleUserInfoChanged.class)
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
             @CacheEvict(key = "'list'")
@@ -33,6 +36,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     }
 
     @Override
+    @Notice(event = FlashSaleUserInfoChanged.class)
     @Cacheable(key = "#id")
     public MemberReceiveAddressVO getMemberReceiveAddressById(Serializable id) {
         MemberReceiveAddress entity = super.getById(id);
@@ -43,6 +47,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     }
 
     @Override
+    @Notice(event = FlashSaleUserInfoChanged.class)
     @Caching(evict = {
             @CacheEvict(key = "#id"),
             @CacheEvict(key = "'list'")
@@ -52,6 +57,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     }
 
     @Override
+    @Notice(event = FlashSaleUserInfoChanged.class)
     @Caching(evict = {
             @CacheEvict(key = "'list'")
     })

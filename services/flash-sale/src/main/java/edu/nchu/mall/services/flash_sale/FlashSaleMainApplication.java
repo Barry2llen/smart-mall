@@ -13,7 +13,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableFeignClients(basePackages = {
         "edu.nchu.mall.components.feign.coupon",
-        "edu.nchu.mall.components.feign.product"
+        "edu.nchu.mall.components.feign.product",
+        "edu.nchu.mall.components.feign.member"
 })
 @SpringBootApplication(
         scanBasePackages = "edu.nchu.mall.components",

@@ -52,6 +52,37 @@ public class RabbitConfig {
         };
     }
 
+    @Bean
+    public Exchange flashSaleEventExchange() {
+        return new TopicExchange("flashsale.event.exchange", true, false);
+    }
+
+    @Bean
+    public Queue flashSaleEventQueue() {
+        return new Queue("flashsale.event.queue", true);
+    }
+
+    @Bean
+    public Queue flashSaleCancelQueue() {
+        return new Queue("flashsale.cancel.queue", true);
+    }
+
+    @Bean
+    public Binding bindingFlashSaleEvent(Queue flashSaleEventQueue, Exchange flashSaleEventExchange) {
+        return BindingBuilder.bind(flashSaleEventQueue)
+                .to(flashSaleEventExchange)
+                .with("flashsale.event.#")
+                .noargs();
+    }
+
+    @Bean
+    public Binding bindingFlashSaleCancel(Queue flashSaleCancelQueue, Exchange flashSaleEventExchange) {
+        return BindingBuilder.bind(flashSaleCancelQueue)
+                .to(flashSaleEventExchange)
+                .with("flashsale.cancel.#")
+                .noargs();
+    }
+
     // 1. 声明自定义类型的延迟交换机
     @Bean
     public CustomExchange delayedExchange() {

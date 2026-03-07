@@ -12,6 +12,8 @@ public class RedisConstant {
     public static final String FLASH_SALE_USER_PURCHASE_KEY_PREFIX = "flash_sale:user_purchase:"; // 后面跟userId:sessionId:skuId，存储用户购买记录，防止重复购买，value是已购买数量
     public static final String FLASH_SALE_USER_PURCHASE_LOCK_KEY_PREFIX = "lock:flash_sale:user:"; // 后面跟userId:seesionId:skuId，存储用户购买锁，防止单个用户的大量请求
 
+    public static final String FLASH_SALE_USER_INFO_KEY_PREFIX = "flash_sale:user_info:"; // 后面跟userId，用于提前存储用户信息（如地址）
+
     public static String getUserPurchaseKey(Long userId, Long sessionId, Long skuId) {
         return FLASH_SALE_USER_PURCHASE_KEY_PREFIX + userId + ":" + sessionId + ":" + skuId;
     }
