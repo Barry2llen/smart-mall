@@ -1,13 +1,14 @@
 package edu.nchu.mall.gateway.config;
 
 import com.alibaba.csp.sentinel.adapter.gateway.sc.callback.BlockRequestHandler;
+import com.alibaba.csp.sentinel.adapter.gateway.sc.callback.GatewayCallbackManager;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.authority.AuthorityException;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowException;
 import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowException;
 import com.alibaba.csp.sentinel.slots.system.SystemBlockException;
-import org.springframework.context.annotation.Bean;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,7 +18,11 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @Configuration
 public class GatewayConfig {
 
-    @Bean
+    @PostConstruct
+    public void initBlockHandler() {
+        GatewayCallbackManager.setBlockHandler(urlBlockHandler());
+    }
+
     public BlockRequestHandler urlBlockHandler() {
         return (exchange, e) -> {
             String msg = buildMessage(e);

@@ -6,13 +6,34 @@ spring:
       enabled: true
   application:
     name: gateway
+  config:
+    import:
+      - nacos:sentinel?group=commons
   cloud:
     sentinel:
       filter:
         enabled: false
+      datasource:
+        gatewayGwFlow:
+          nacos:
+            server-addr: ${spring.cloud.nacos.server-addr}
+            namespace: ${spring.cloud.nacos.config.namespace}
+            data-id: gateway-gw-flow-rules
+            group-id: app
+            data-type: json
+            rule-type: gw-flow
+        gatewayApiGroup:
+          nacos:
+            server-addr: ${spring.cloud.nacos.server-addr}
+            namespace: ${spring.cloud.nacos.config.namespace}
+            data-id: gateway-gw-api-group-rules
+            group-id: app
+            data-type: json
+            rule-type: gw-api-group
     nacos:
       config:
         namespace: dev
+        file-extension: yaml
         import-check:
           enabled: false
       server-addr: 127.0.0.1:8848

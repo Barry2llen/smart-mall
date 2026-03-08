@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <defs>
+    <style>
+      .bg { fill: #f4f7fb; }
+      .panel { fill: #ffffff; stroke: #d8e1ee; stroke-width: 1; }
+      .title { font: 700 36px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #1f2a44; }
+      .subtitle { font: 400 18px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #5c6b82; }
+      .head { fill: #eef4fb; }
+      .headText { font: 700 18px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #24324a; }
+      .cellText { font: 16px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #2d3a53; }
+      .small { font: 15px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #4a5872; }
+      .muted { font: 15px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #6d7c93; }
+      .badgeRoute { fill: #dceeff; stroke: #8bb8ff; stroke-width: 1; }
+      .badgeApi { fill: #e5f8ea; stroke: #84d49b; stroke-width: 1; }
+      .badgeText { font: 700 14px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #27415f; }
+      .line { stroke: #d8e1ee; stroke-width: 1; }
+      .noteTitle { font: 700 20px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #22314c; }
+      .note { font: 16px 'Microsoft YaHei', 'PingFang SC', sans-serif; fill: #44526a; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="980"/>
+  <rect class="panel" x="56" y="40" width="1488" height="900" rx="16"/>
+
+  <text class="title" x="96" y="102">Sentinel Gateway 规则关系图</text>
+  <text class="subtitle" x="96" y="138">基于当前控制台截图整理：Route ID 是路由级总闸门，API 分组是路径级细粒度保护；同一请求可同时命中两类规则。</text>
+
+  <rect class="head" x="96" y="182" width="1408" height="58" rx="8"/>
+  <text class="headText" x="126" y="218">请求示例</text>
+  <text class="headText" x="430" y="218">命中 Route ID</text>
+  <text class="headText" x="690" y="218">命中 API 分组</text>
+  <text class="headText" x="980" y="218">当前阈值</text>
+  <text class="headText" x="1180" y="218">谁会先拦截</text>
+
+  <line class="line" x1="380" y1="182" x2="380" y2="710"/>
+  <line class="line" x1="640" y1="182" x2="640" y2="710"/>
+  <line class="line" x1="930" y1="182" x2="930" y2="710"/>
+  <line class="line" x1="1130" y1="182" x2="1130" y2="710"/>
+
+  <line class="line" x1="96" y1="240" x2="1504" y2="240"/>
+  <line class="line" x1="96" y1="314" x2="1504" y2="314"/>
+  <line class="line" x1="96" y1="388" x2="1504" y2="388"/>
+  <line class="line" x1="96" y1="462" x2="1504" y2="462"/>
+  <line class="line" x1="96" y1="536" x2="1504" y2="536"/>
+  <line class="line" x1="96" y1="610" x2="1504" y2="610"/>
+  <line class="line" x1="96" y1="684" x2="1504" y2="684"/>
+  <line class="line" x1="96" y1="710" x2="1504" y2="710"/>
+
+  <text class="cellText" x="126" y="284">/auth/login</text>
+  <rect class="badgeRoute" x="430" y="258" width="72" height="30" rx="15"/>
+  <text class="badgeText" x="451" y="278">auth</text>
+  <rect class="badgeApi" x="690" y="258" width="96" height="30" rx="15"/>
+  <text class="badgeText" x="713" y="278">auth-api</text>
+  <text class="cellText" x="980" y="284">Route: 20 QPS / API: 15 QPS</text>
+  <text class="cellText" x="1180" y="284">通常是 auth-api 更早触发</text>
+
+  <text class="cellText" x="126" y="358">/auth/register</text>
+  <rect class="badgeRoute" x="430" y="332" width="72" height="30" rx="15"/>
+  <text class="badgeText" x="451" y="352">auth</text>
+  <rect class="badgeApi" x="690" y="332" width="96" height="30" rx="15"/>
+  <text class="badgeText" x="713" y="352">auth-api</text>
+  <text class="cellText" x="980" y="358">Route: 20 QPS / API: 15 QPS</text>
+  <text class="cellText" x="1180" y="358">和 /auth/login 一样</text>
+
+  <text class="cellText" x="126" y="432">/order/submit</text>
+  <rect class="badgeRoute" x="430" y="406" width="80" height="30" rx="15"/>
+  <text class="badgeText" x="450" y="426">order</text>
+  <rect class="badgeApi" x="690" y="406" width="108" height="30" rx="15"/>
+  <text class="badgeText" x="713" y="426">order-api</text>
+  <text class="cellText" x="980" y="432">Route: 10 QPS / API: 8 QPS</text>
+  <text class="cellText" x="1180" y="432">通常是 order-api 更早触发</text>
+
+  <text class="cellText" x="126" y="506">/order/pay</text>
+  <rect class="badgeRoute" x="430" y="480" width="80" height="30" rx="15"/>
+  <text class="badgeText" x="450" y="500">order</text>
+  <rect class="badgeApi" x="690" y="480" width="108" height="30" rx="15"/>
+  <text class="badgeText" x="713" y="500">order-api</text>
+  <text class="cellText" x="980" y="506">Route: 10 QPS / API: 8 QPS</text>
+  <text class="cellText" x="1180" y="506">和 /order/submit 一样</text>
+
+  <text class="cellText" x="126" y="580">/flash-sale/kill</text>
+  <rect class="badgeRoute" x="430" y="554" width="110" height="30" rx="15"/>
+  <text class="badgeText" x="447" y="574">flash-sale</text>
+  <rect class="badgeApi" x="690" y="554" width="126" height="30" rx="15"/>
+  <text class="badgeText" x="709" y="574">flash-sale-api</text>
+  <text class="cellText" x="980" y="580">Route: 5 QPS / API: 3 QPS</text>
+  <text class="cellText" x="1180" y="580">通常是 flash-sale-api 更早触发</text>
+
+  <text class="cellText" x="126" y="654">/flash-sale/list</text>
+  <rect class="badgeRoute" x="430" y="628" width="110" height="30" rx="15"/>
+  <text class="badgeText" x="447" y="648">flash-sale</text>
+  <rect class="badgeApi" x="690" y="628" width="126" height="30" rx="15"/>
+  <text class="badgeText" x="709" y="648">flash-sale-api</text>
+  <text class="cellText" x="980" y="654">Route: 5 QPS / API: 3 QPS</text>
+  <text class="cellText" x="1180" y="654">和 /flash-sale/kill 一样</text>
+
+  <text class="cellText" x="126" y="728">/cart/list</text>
+  <text class="muted" x="430" y="728">当前截图里未见 cart 路由级规则</text>
+  <rect class="badgeApi" x="690" y="702" width="90" height="30" rx="15"/>
+  <text class="badgeText" x="715" y="722">cart-api</text>
+  <text class="cellText" x="980" y="728">API: 1 QPS</text>
+  <text class="cellText" x="1180" y="728">只有 cart-api 会拦截</text>
+
+  <text class="noteTitle" x="96" y="796">怎么看这张图</text>
+  <text class="note" x="96" y="832">1. Route ID 规则按网关路由 ID 生效，适合做整条业务线的总限流。</text>
+  <text class="note" x="96" y="866">2. API 分组规则按你在 Sentinel API 管理里定义的路径模式生效，适合做热点接口细粒度保护。</text>
+  <text class="note" x="96" y="900">3. 同一请求能同时命中两类规则，只要任意一条先达到阈值，请求就会被 429 拦截。</text>
+  <text class="note" x="96" y="934">4. 你当前截图里的 auth/order/flash-sale 是“路由级 + API 分组级”并存，cart 目前看起来只有 API 分组级。</text>
+</svg>
