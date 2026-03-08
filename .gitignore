@@ -43,5 +43,12 @@ nacos-configs
 ### dev ###
 application-dev.yaml
 
+### IDEA ###
+.idea
+
+### maven ###
+.m2
+
+
 temp
 output
