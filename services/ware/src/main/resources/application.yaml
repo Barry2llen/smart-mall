@@ -11,6 +11,7 @@ spring:
       - nacos:commons-redis-cache?group=commons
       - nacos:commons?group=commons
       - nacos:rabbit?group=mq
+      - nacos:sentinel?group=commons
   cloud:
     nacos:
       config:

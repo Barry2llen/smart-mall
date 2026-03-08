@@ -13,6 +13,7 @@ spring:
       - nacos:commons?group=commons
       - nacos:oauth2?group=auth
       - nacos:jwt?group=auth
+      - nacos:sentinel?group=commons
   cloud:
     nacos:
       config:

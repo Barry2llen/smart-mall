@@ -7,6 +7,9 @@ spring:
   application:
     name: gateway
   cloud:
+    sentinel:
+      filter:
+        enabled: false
     nacos:
       config:
         namespace: dev

@@ -10,6 +10,7 @@ spring:
       - nacos:commons-mail?group=commons
       - nacos:commons-file?group=commons
       - nacos:commons-callback?group=commons
+      - nacos:sentinel?group=commons
   cloud:
     nacos:
       config:

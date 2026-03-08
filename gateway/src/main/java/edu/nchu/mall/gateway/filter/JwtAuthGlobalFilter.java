@@ -135,7 +135,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
 
         // 简单返回一个 JSON 错误提示
-        String result = String.format("{\"code\": 401, \"message\": \"%s\"}", msg);
+        String result = String.format("{\"code\": 401, \"msg\": \"%s\"}", msg);
         return response.writeWith(Mono.just(response.bufferFactory().wrap(result.getBytes())));
     }
 
@@ -148,7 +148,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
 
         // 简单返回一个 JSON 错误提示
-        String result = String.format("{\"code\": 404, \"message\": \"%s\"}", msg);
+        String result = String.format("{\"code\": 404, \"msg\": \"%s\"}", msg);
         return response.writeWith(Mono.just(response.bufferFactory().wrap(result.getBytes())));
     }
 

@@ -8,6 +8,7 @@ spring:
       - nacos:commons?group=commons
       - nacos:commons-elastic?group=commons
       - nacos:rabbit?group=mq
+      - nacos:sentinel?group=commons
   cloud:
     nacos:
       config:

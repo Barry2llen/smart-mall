@@ -10,6 +10,7 @@ spring:
       - nacos:commons-redis-cache?group=commons
       - nacos:commons?group=commons
       - nacos:cart?group=app
+      - nacos:sentinel?group=commons
   cloud:
     nacos:
       config:
