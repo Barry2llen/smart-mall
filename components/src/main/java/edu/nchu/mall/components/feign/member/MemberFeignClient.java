@@ -20,6 +20,9 @@ public interface MemberFeignClient {
     @GetMapping("/members/{sid}")
     R<MemberVO> getMember(@PathVariable("sid") @NotNull Long id);
 
+    @GetMapping("/members")
+    R<List<MemberVO>> getMembers(@RequestParam @NotNull Integer pageNum, @RequestParam @NotNull Integer pageSize);
+
     @GetMapping("/members/salt")
     @Nullable
     String getSaltedPassword(@RequestParam String key);

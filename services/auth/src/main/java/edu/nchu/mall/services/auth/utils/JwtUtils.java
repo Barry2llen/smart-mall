@@ -40,6 +40,18 @@ public class JwtUtils {
         return generateToken(subject, _claims, accessExpirationMs);
     }
 
+    /**
+     * 生成永久有效的 Access Token（不包含 exp）
+     * @param subject 主题
+     * @param claims 其他信息
+     * @return JWT Token
+     */
+    public String generatePermanentAccessToken(String subject, Map<String, Object> claims) {
+        Map<String, Object> _claims = new HashMap<>(claims == null ? Map.of() : claims);
+        _claims.put("type", "access");
+        return generateToken(subject, _claims, null);
+    }
+
 
     /**
      * 生成 Refresh Token
@@ -50,20 +62,24 @@ public class JwtUtils {
         return generateToken(subject, Map.of("type", "refresh"), refreshExpirationMs);
     }
 
-    private String generateToken(String subject, Map<String, Object> claims, long expirationMs) {
+    private String generateToken(String subject, Map<String, Object> claims, Long expirationMs) {
         Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
 
+        Date now = new Date();
         JwtBuilder builder = Jwts.builder();
         for (Map.Entry<String, Object> entry : claims.entrySet()) {
             builder.claim(entry.getKey(), entry.getValue());
         }
 
-        return builder
+        builder = builder
                 .setSubject(subject)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + expirationMs))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+                .setIssuedAt(now);
+
+        if (expirationMs != null) {
+            builder.setExpiration(new Date(now.getTime() + expirationMs));
+        }
+
+        return builder.signWith(key, SignatureAlgorithm.HS256).compact();
     }
 
     private Key getSigningKey() {

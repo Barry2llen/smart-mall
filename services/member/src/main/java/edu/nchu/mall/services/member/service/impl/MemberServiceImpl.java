@@ -42,7 +42,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
             @CacheEvict(key = "#dto.email"),
-            @CacheEvict(key = "'list'")
+            @CacheEvict(allEntries = true)
     })
     public boolean updateById(MemberDTO dto) {
         Member entity = new Member();
@@ -63,7 +63,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     @Override
     @Caching(evict = {
             @CacheEvict(key = "#id"),
-            @CacheEvict(key = "'list'")
+            @CacheEvict(allEntries = true)
     })
     public boolean removeById(Serializable id) {
         Member member = getById(id);
@@ -76,7 +76,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     @Override
     @Transactional
     @Caching(evict = {
-            @CacheEvict(key = "'list'"),
+            @CacheEvict(allEntries = true),
             @CacheEvict(key = "#dto.email")
     })
     public boolean save(MemberDTO dto) {
@@ -107,7 +107,7 @@ public class MemberServiceImpl extends ServiceImpl<MemberMapper, Member> impleme
     }
 
     @Override
-    @Cacheable(key = "'list'")
+    @Cacheable(key = "'list:' + #pageNum + ':' + #pageSize")
     public List<MemberVO> getMembers(Integer pageNum, Integer pageSize) {
         IPage<Member> page = new Page<>(pageNum, pageSize);
         return super.list(page).stream().map(entity -> {
