@@ -7,7 +7,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>auth</artifactId>
-    <name>Archetype - auth</name>
+    <name>auth</name>
     <url>http://maven.apache.org</url>
 
     <dependencies>

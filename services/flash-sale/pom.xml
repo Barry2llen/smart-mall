@@ -7,7 +7,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>flash-sale</artifactId>
-    <name>Archetype - flash-sale</name>
+    <name>flash-sale</name>
     <url>http://maven.apache.org</url>
 
     <dependencies>
