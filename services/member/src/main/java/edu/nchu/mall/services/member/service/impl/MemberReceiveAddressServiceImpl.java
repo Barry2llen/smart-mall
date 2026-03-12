@@ -27,7 +27,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     @Notice(event = FlashSaleUserInfoChanged.class)
     @Caching(evict = {
             @CacheEvict(key = "#dto.id"),
-            @CacheEvict(key = "'list'")
+            @CacheEvict(key = "'list' + #dto.memberId")
     })
     public boolean updateById(MemberReceiveAddressDTO dto) {
         MemberReceiveAddress entity = new MemberReceiveAddress();
@@ -50,7 +50,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     @Notice(event = FlashSaleUserInfoChanged.class)
     @Caching(evict = {
             @CacheEvict(key = "#id"),
-            @CacheEvict(key = "'list'")
+            @CacheEvict(key = "'list' + #id")
     })
     public boolean removeById(Serializable id) {
         return super.removeById(id);
@@ -59,7 +59,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     @Override
     @Notice(event = FlashSaleUserInfoChanged.class)
     @Caching(evict = {
-            @CacheEvict(key = "'list'")
+            @CacheEvict(key = "'list' + #dto.memberId")
     })
     public boolean save(MemberReceiveAddressDTO dto) {
         MemberReceiveAddress entity = new MemberReceiveAddress();
@@ -68,7 +68,7 @@ public class MemberReceiveAddressServiceImpl extends ServiceImpl<MemberReceiveAd
     }
 
     @Override
-    @Cacheable(key = "'list'")
+    @Cacheable(key = "'list' + #memberId")
     public List<MemberReceiveAddress> getMemberReceiveAddresses(Long memberId) {
         return super.list(Wrappers.<MemberReceiveAddress>lambdaQuery().eq(MemberReceiveAddress::getMemberId, memberId));
     }

@@ -39,7 +39,14 @@ public class OrderFlashSaleListener {
             orderSubmit.setAddrId(order.getAddressId());
             orderSubmit.setNotes(order.getNote());
 
-            orderService.submitFlashSaleOrder(order.getUserId(), orderSubmit, order);
+            OrderService.OrderSubmitStatus status = orderService.submitFlashSaleOrder(order.getUserId(), orderSubmit, order);
+
+            if (status != OrderService.OrderSubmitStatus.OK) {
+                log.warn("Flash sale order submission failed for orderSn {}: {}", order.getOrderSn(), status.getMessage());
+                rabbitTemplate.convertAndSend("flashsale.event.exchange", "flashsale.cancel", order);
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                return;
+            }
 
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (Exception e) {

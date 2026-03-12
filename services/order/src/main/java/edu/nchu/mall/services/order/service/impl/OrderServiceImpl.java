@@ -487,7 +487,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         var self = ((OrderServiceImpl) AopContext.currentProxy());
 
         // 获取收货地址信息
-        var addrTask = callTaskUtils.rcall(() -> memberFeignClient.getMemberReceiveAddress(orderSubmit.getAddrId(), memberId));
+        var addrTask = callTaskUtils.rcall(() -> {
+            if (orderSubmit.getAddrId() == null) {
+                var r = memberFeignClient.getMemberReceiveAddress(memberId);
+                if (r.getCode() != RCT.SUCCESS || r.getData().isEmpty()) {
+                    return R.fail("Cannot get member receive address");
+                }
+                return R.success(r.getData().getFirst());
+            } else {
+                return memberFeignClient.getMemberReceiveAddress(orderSubmit.getAddrId(), memberId);
+            }
+        });
         // 获取会员信息
         var memberTask = callTaskUtils.rcall(() -> memberFeignClient.getMember(memberId));
 
@@ -496,6 +506,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         var memberTry = memberTask.join();
 
         if (!Try.allSucceeded(addrTry, memberTry)) {
+            log.info("获取收货地址信息或会员信息失败 [memberId={}, addrId={}]", memberId, orderSubmit.getAddrId());
             return OrderSubmitStatus.ERROR;
         }
 
@@ -512,6 +523,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         var skuAttrTry = skuAttrTask.join();
 
         if (!Try.allSucceeded(spuTry, skuAttrTry) || spuTry.getValue().size() != 1) {
+            log.info("获取spu信息或sku属性信息失败 [spuId={}, skuId={}]", orderSubmit.getSpuId(), orderSubmit.getSkuId());
             return OrderSubmitStatus.ERROR;
         }
 
@@ -531,6 +543,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         } catch (StockNotEnoughException ex) {
             return OrderSubmitStatus.NOT_ENOUGH_STOCK;
         } catch (CustomException | AmqpException e) {
+            log.info("保存订单失败 [orderSn={}]", orderSubmit.getOrderSn(), e);
             return OrderSubmitStatus.ERROR;
         }
 
@@ -551,6 +564,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         lock.setAddress(address);
         var lockTry = Try.of(wareFeignClient::lockStock, lock);
         if (lockTry.failed()) {
+            log.info("锁定库存失败 [orderSn={}]", order.getOrderSn());
             throw new CustomException("锁定库存失败");
         } else if (!R.succeeded(lockTry.getValue())) {
             throw new StockNotEnoughException("库存不足");

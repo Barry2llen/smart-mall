@@ -3,7 +3,12 @@ server:
 spring:
   application:
     name: auth
-
+  cloud:
+    nacos:
+      config:
+        namespace: dev
+        file-extension: yaml
+      server-addr: 127.0.0.1:8848
   config:
     import:
       - nacos:commons-mysql?group=commons
@@ -14,12 +19,6 @@ spring:
       - nacos:oauth2?group=auth
       - nacos:jwt?group=auth
       - nacos:sentinel?group=commons
-  cloud:
-    nacos:
-      config:
-        namespace: dev
-        file-extension: yaml
-      server-addr: 127.0.0.1:8848
   cache:
     redis:
       key-prefix: 'auth::'

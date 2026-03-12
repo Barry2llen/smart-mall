@@ -39,7 +39,7 @@ public class FlashSaleSchedule {
     @Autowired
     StringRedisTemplate redisTemplate;
 
-    @Scheduled(cron = CRON_EXPRESSION_TEST2)
+    @Scheduled(cron = CRON_EXPRESSION)
     public void loadFlashSaleSessions() {
         log.info("Starting to load flash sale sessions into Redis");
 
