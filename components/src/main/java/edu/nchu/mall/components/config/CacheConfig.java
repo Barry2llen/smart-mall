@@ -7,22 +7,28 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import edu.nchu.mall.components.cache.TwoLevelCacheManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
+import java.util.Collections;
 import java.util.Collection;
 import java.util.Map;
 
 @Slf4j
 @Configuration
-@EnableConfigurationProperties({CacheProperties.class})
+@EnableConfigurationProperties({CacheProperties.class, LocalCacheTtlProperties.class})
 public class CacheConfig {
 
     @Autowired
@@ -84,5 +90,26 @@ public class CacheConfig {
         }
 
         return config;
+    }
+
+    @Bean("redisLayerCacheManager")
+    public RedisCacheManager redisLayerCacheManager(RedisConnectionFactory redisConnectionFactory,
+                                                    RedisCacheConfiguration redisCacheConfiguration) {
+        return RedisCacheManager.RedisCacheManagerBuilder.fromConnectionFactory(redisConnectionFactory)
+                .cacheDefaults(redisCacheConfiguration)
+                .build();
+    }
+
+    @Bean
+    @Primary
+    public CacheManager cacheManager(CacheProperties cacheProperties,
+                                     LocalCacheTtlProperties localCacheTtlProperties,
+                                     RedisCacheManager redisLayerCacheManager) {
+        return new TwoLevelCacheManager(
+                redisLayerCacheManager,
+                localCacheTtlProperties,
+                cacheProperties.getRedis().isCacheNullValues(),
+                cacheProperties.getCacheNames() == null ? Collections.emptySet() : cacheProperties.getCacheNames()
+        );
     }
 }
