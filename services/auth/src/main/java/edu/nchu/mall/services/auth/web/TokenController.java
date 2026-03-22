@@ -39,7 +39,6 @@ public class TokenController {
     @GetMapping("/refresh")
     @ResponseBody
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
-        // TODO 刷新token
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return ResponseEntity.status(401).body("token not exists");
