@@ -27,4 +27,6 @@ public interface SpuInfoService extends IService<SpuInfo> {
     List<SpuInfo> list(Integer pageNum, Integer pageSize, Long catalogId, Long brandId, String key, Integer status);
 
     Map<Long, SpuInfoVO> getBatchSpuInfo(Iterable<Long> spuIds);
+
+    void rebuildSearchIndex(Integer batchSize);
 }

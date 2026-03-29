@@ -253,9 +253,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 uw.set(Order::getStatus, OrderStatus.UNSHIPPED);
                 uw.eq(Order::getStatus, OrderStatus.UNPAID);
             }
-            default -> {
-                uw.set(Order::getStatus, status);
-            }
+            default -> uw.set(Order::getStatus, status);
         }
 
         boolean updateRes = this.update(uw);

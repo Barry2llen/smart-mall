@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
 import co.elastic.clients.json.JsonData;
@@ -16,38 +17,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.utils.Entry;
 import edu.nchu.mall.components.utils.KeyUtils;
-import edu.nchu.mall.services.search.document.Product;
 import edu.nchu.mall.services.search.dto.ProductSearchParam;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
-import org.springframework.data.elasticsearch.core.query.HighlightQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
-import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
-import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
-import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 import org.springframework.http.HttpStatus;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
 import jakarta.json.stream.JsonParser;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class QueryUtils {
 
-    @Getter
-    @AllArgsConstructor
-    @NoArgsConstructor
     public static class ProductQuery {
-        public static final String INDEX_NAME = "product";
+        public static final String INDEX_NAME = "product_spu";
         public static final int DEFAULT_PAGE_SIZE = 10;
         public static final int DEFAULT_PAGE_NUM = 0;
-        public static final String DEFAULT_HIGHLIGHT_PRE_TAG = "<b style='color:red;'>";
-        public static final String DEFAULT_HIGHLIGHT_POST_TAG = "</b>";
         public static final String BRAND_AGG = "brand_agg";
         public static final String BRAND_NAME_AGG = "brandName_agg";
         public static final String BRAND_IMG_AGG = "brandImg_agg";
@@ -62,21 +55,21 @@ public class QueryUtils {
         static {
             try {
                 ClassPathResource resource = new ClassPathResource("dsl/search/product.agg.json");
-                String agg_json;
+                String aggJson;
                 try (var inputStream = resource.getInputStream()) {
-                    agg_json = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                    aggJson = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
                 }
 
                 ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(agg_json);
+                JsonNode rootNode = objectMapper.readTree(aggJson);
                 JsonpMapper jsonpMapper = new JacksonJsonpMapper();
 
-                List<Entry<String, Aggregation>> aggs = new LinkedList<>();
+                List<Entry<String, Aggregation>> aggs = new ArrayList<>();
                 Iterator<Map.Entry<String, JsonNode>> fields = rootNode.fields();
                 while (fields.hasNext()) {
                     Map.Entry<String, JsonNode> entry = fields.next();
-                    String aggName = entry.getKey(); // "brand_agg"
-                    String aggBodyJson = entry.getValue().toString(); // "{ "terms": ... }"
+                    String aggName = entry.getKey();
+                    String aggBodyJson = entry.getValue().toString();
 
                     try (StringReader reader = new StringReader(aggBodyJson);
                          JsonParser parser = jsonpMapper.jsonProvider().createParser(reader)) {
@@ -91,33 +84,17 @@ public class QueryUtils {
             }
         }
 
-        private int pageSize = DEFAULT_PAGE_SIZE;
-        private int pageNum = DEFAULT_PAGE_NUM;
-        private String highlightPreTag = DEFAULT_HIGHLIGHT_PRE_TAG;
-        private String highlightPostTag = DEFAULT_HIGHLIGHT_POST_TAG;
-
-
-        // src/main/resources/dsl/search/product.jsonl
-        public Query buildQuery(ProductSearchParam param) throws Exception{
-
+        public Query buildQuery(ProductSearchParam param) throws Exception {
             NativeQueryBuilder builder = new NativeQueryBuilder();
             BoolQuery.Builder boolQueryBuilder = new BoolQuery.Builder();
 
             if (param.getKeyword() != null && !param.getKeyword().trim().isEmpty()) {
-                builder.withHighlightQuery(
-                        new HighlightQuery(
-                                new Highlight(
-                                        HighlightParameters.builder()
-                                                .withPreTags(highlightPreTag)
-                                                .withPostTags(highlightPostTag)
-                                                .build()
-                                        ,
-                                        List.of(new HighlightField("skuTitle"))
-                                ),
-                                Product.class
-                        )
-                );
-                boolQueryBuilder.must(q -> q.match(m -> m.field("skuTitle").query(param.getKeyword())));
+                String keyword = param.getKeyword().trim();
+                boolQueryBuilder.must(q -> q.bool(b -> b
+                        .should(s -> s.match(m -> m.field("spuName").query(keyword).boost(3.0f).operator(Operator.And)))
+                        .should(s -> s.match(m -> m.field("skuTitles").query(keyword).operator(Operator.And)))
+                        .minimumShouldMatch("1")
+                ));
             }
 
             if (param.getCatalogId() != null) {
@@ -140,9 +117,13 @@ public class QueryUtils {
                 Map<Long, List<String>> attrs = new HashMap<>();
                 for (String attr : param.getAttrs()) {
                     String[] split = attr.split("_");
-                    if (split.length != 2) continue;
+                    if (split.length != 2) {
+                        continue;
+                    }
                     var op = KeyUtils.parseKey2Long(split[0]);
-                    if (op.isEmpty()) continue;
+                    if (op.isEmpty()) {
+                        continue;
+                    }
                     String[] vals = split[1].split(":");
                     if (attrs.containsKey(op.get())) {
                         attrs.get(op.get()).addAll(Arrays.asList(vals));
@@ -152,10 +133,9 @@ public class QueryUtils {
                 }
 
                 List<co.elastic.clients.elasticsearch._types.query_dsl.Query> queries = attrs.entrySet().stream().map(entry -> {
-                    var term = QueryBuilders
-                            .term(t -> t.field("attrs.attrId").value(entry.getKey().toString()));
-                    var terms = QueryBuilders
-                            .terms(t -> t.field("attrs.attrValue").terms(v -> v.value(entry.getValue().stream().map(FieldValue::of).toList())));
+                    var term = QueryBuilders.term(t -> t.field("attrs.attrId").value(entry.getKey().toString()));
+                    var terms = QueryBuilders.terms(t -> t.field("attrs.attrValue")
+                            .terms(v -> v.value(entry.getValue().stream().map(FieldValue::of).toList())));
                     return QueryBuilders.bool(b -> b.must(term, terms));
                 }).toList();
 
@@ -182,7 +162,7 @@ public class QueryUtils {
                         maxPrice = new BigDecimal(right);
                     }
                 }
-                RangeQuery.Builder rangeQueryBuilder = new RangeQuery.Builder().field("skuPrice");
+                RangeQuery.Builder rangeQueryBuilder = new RangeQuery.Builder().field("skuPrices");
                 if (minPrice != null) {
                     rangeQueryBuilder.gte(JsonData.of(minPrice));
                 }
@@ -196,16 +176,17 @@ public class QueryUtils {
 
             // sort, from, size, aggs
 
-            // skuPrice_asc/desc
+            // skuPrice_asc/desc -> minPrice
             if (param.getSort() != null) {
                 List<String[]> sort = param.getSort().stream()
                         .map(s -> s.split("_"))
                         .filter(s -> s.length == 2)
                         .toList();
-                List<SortOptions> sorts = sort.stream()
-                        .map(
-                                s -> SortOptionsBuilders.field(f -> f.field(s[0]).order(s[1].equals(SortOrder.Asc.toString()) ? SortOrder.Asc : SortOrder.Desc))
-                        ).toList();
+                List<SortOptions> sorts = sort.stream().map(s -> {
+                    String field = "skuPrice".equals(s[0]) ? "minPrice" : s[0];
+                    SortOrder order = s[1].equals(SortOrder.Asc.toString()) ? SortOrder.Asc : SortOrder.Desc;
+                    return SortOptionsBuilders.field(f -> f.field(field).order(order));
+                }).toList();
                 builder.withSort(sorts);
             }
 
@@ -220,6 +201,5 @@ public class QueryUtils {
             BoolQuery boolQuery = boolQueryBuilder.build();
             return builder.withQuery(q -> q.bool(boolQuery)).build();
         }
-
     }
 }

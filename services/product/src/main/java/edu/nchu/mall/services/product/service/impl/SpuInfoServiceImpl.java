@@ -2,16 +2,14 @@ package edu.nchu.mall.services.product.service.impl;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import edu.nchu.mall.components.exception.CustomException;
 import edu.nchu.mall.components.feign.coupon.CouponFeignClient;
-import edu.nchu.mall.components.feign.ware.WareFeignClient;
+import edu.nchu.mall.models.document.EsSpuProduct;
 import edu.nchu.mall.models.enums.SpuStatus;
-import edu.nchu.mall.models.document.EsProduct;
 import edu.nchu.mall.models.dto.BoundsDTO;
 import edu.nchu.mall.models.dto.SkuReductionDTO;
 import edu.nchu.mall.models.dto.SpuInfoDTO;
@@ -19,10 +17,10 @@ import edu.nchu.mall.models.dto.SpuSaveDTO;
 import edu.nchu.mall.models.entity.*;
 import edu.nchu.mall.models.model.R;
 import edu.nchu.mall.models.model.RCT;
-import edu.nchu.mall.models.vo.SkuStockVO;
 import edu.nchu.mall.models.vo.SpuInfoVO;
 import edu.nchu.mall.services.product.dao.*;
 import edu.nchu.mall.services.product.service.*;
+import edu.nchu.mall.services.product.service.support.SpuSearchProductBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.aop.framework.AopContext;
@@ -41,7 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -73,25 +70,22 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     CouponFeignClient couponFeignClient;
 
     @Autowired
-    BrandService brandService;
-
-    @Autowired
-    CategoryService categoryService;
-
-    @Autowired
-    WareFeignClient wareFeignClient;
-
-    @Autowired
     CacheManager cacheManager;
 
     @Autowired
     RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    SpuSearchProductBuilder spuSearchProductBuilder;
+
+    private static final String PRODUCT_SPU_EXCHANGE = "product.spu.exchange";
+    private static final String PRODUCT_SPU_PUT_ON_SALE_ROUTING_KEY = "product.spu.elastic.putonsale";
+    private static final String PRODUCT_SPU_DELETE_ROUTING_KEY = "product.spu.elastic.delete";
+
     private boolean checkCache(String key) {
         Cache cache = cacheManager.getCache("spuInfo");
         return cache != null && cache.get(key) != null;
     }
-
 
     private void checkResult(boolean res, String msg) {
         if (!res) {
@@ -107,9 +101,11 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         }
     }
 
-    private List<SkuInfo> getSkusBySpuId(Long spuId) {
-        if (spuId == null) return List.of();
-        return skuInfoMapper.selectList(new LambdaQueryWrapper<SkuInfo>().eq(SkuInfo::getSpuId, spuId));
+    private void sendSearchDocuments(List<EsSpuProduct> esProducts) {
+        if (esProducts == null || esProducts.isEmpty()) {
+            return;
+        }
+        rabbitTemplate.convertAndSend(PRODUCT_SPU_EXCHANGE, PRODUCT_SPU_PUT_ON_SALE_ROUTING_KEY, esProducts);
     }
 
     /**
@@ -118,66 +114,10 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
      * @return boolean
      */
     private boolean putOnSale(Long spuId) {
-
-        // 检查spu是否有对应sku
-        List<SkuInfo> skus = getSkusBySpuId(spuId);
-        if (skus.isEmpty()) {
-            throw new CustomException("无法上架没有任何sku的商品", null, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        // TODO(接口幂等) 检查商品是否下架或新建
-
-        // 拿到需要检索的属性
-        List<ProductAttrValue> attrValues = productAttrValueService.list(new LambdaQueryWrapper<ProductAttrValue>().eq(ProductAttrValue::getSpuId, spuId));
-        List<Long> attrIds = attrValues.stream().map(ProductAttrValue::getAttrId).toList();
-        if (attrIds.isEmpty()) attrIds = List.of(0L);
-        List<Long> searchAttrIds = attrService.list(new LambdaQueryWrapper<Attr>().eq(Attr::getAttrType, 1).in(Attr::getAttrId, attrIds)).stream().map(Attr::getAttrId).toList();
-        Set<Long> searchAttrIdSet = new HashSet<>(searchAttrIds);
-        List<EsProduct.Attr> esAttrs = attrValues.stream()
-                .filter(v -> searchAttrIdSet.contains(v.getAttrId()))
-                .map(attrValue -> {
-                    EsProduct.Attr esAttr = new EsProduct.Attr();
-                    BeanUtils.copyProperties(attrValue, esAttr);
-                    return esAttr;
-                }).toList();
-
-        List<EsProduct> esProducts = skus.stream().map(sku -> {
-            EsProduct esProduct = new EsProduct();
-            BeanUtils.copyProperties(sku, esProduct);
-            esProduct.setSkuPrice(sku.getPrice());
-            esProduct.setSkuImg(sku.getSkuDefaultImg());
-            esProduct.setHotScore(0L);
-            esProduct.setAttrs(esAttrs);
-            return esProduct;
-        }).toList();
-
-        List<Brand> brands = brandService.seqByIds(esProducts.stream().map(EsProduct::getBrandId).toList());
-        List<String> brandNames = brands.stream().map(brand -> brand != null ? brand.getName() : null).toList();
-        List<String> brandImgs = brands.stream().map(brand -> brand != null ? brand.getLogo() : null).toList();
-        List<String> catalogNames = categoryService.seqByIds(esProducts.stream().map(EsProduct::getCatalogId).toList())
-                .stream().map(category -> category != null ? category.getName() : null).toList();
-
-        // 远程查询是否有库存
-        R<List<SkuStockVO>> stocksBySkuIds = wareFeignClient.getStocksBySkuIds(skus.stream().map(SkuInfo::getSkuId).toList());
-        checkResult(stocksBySkuIds, "远程查询库存失败");
-        Map<Long, Integer> collect = stocksBySkuIds.getData().stream().collect(Collectors.toMap(SkuStockVO::getSkuId, stock -> stock.getStock() - stock.getStockLocked()));
-
-        for (int i = 0; i < esProducts.size(); i++) {
-            esProducts.get(i).setBrandName(brandNames.get(i));
-            esProducts.get(i).setBrandImg(brandImgs.get(i));
-            esProducts.get(i).setCatalogName(catalogNames.get(i));
-            esProducts.get(i).setHasStock(collect.getOrDefault(esProducts.get(i).getSkuId(), 0) > 0);
-        }
-
-        // 保存到 Elasticsearch
-
-//        R<?> r = searchFeignClient.saveProductAll(esProducts);
-//        checkResult(r, "保存商品到es出错");
-//        return true;
-
         try {
-            rabbitTemplate.convertAndSend("product.spu.exchange", "product.spu.elastic.putonsale", esProducts);
+            sendSearchDocuments(List.of(spuSearchProductBuilder.build(spuId)));
         } catch (Exception e){
+            log.error("商品上架同步搜索索引失败 [spuId={}]", spuId, e);
             return false;
         }
 
@@ -185,11 +125,6 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
     }
 
     private boolean takenOffSale(Long spuId) {
-        List<SkuInfo> skus = getSkusBySpuId(spuId);
-        if (skus.isEmpty()) {
-            throw new CustomException("无法下架没有任何sku的商品", new IllegalArgumentException(), HttpStatus.BAD_REQUEST);
-        }
-
         // (接口幂等) 检查商品是否上架
         var self = (SpuInfoServiceImpl)AopContext.currentProxy();
         SpuInfo info = self.getById(spuId);
@@ -198,16 +133,13 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
             throw new CustomException("商品不存在", null, HttpStatus.BAD_REQUEST);
         }
 
-        LambdaUpdateWrapper<SpuInfo> wrapper = Wrappers.lambdaUpdate();
-        wrapper.eq(SpuInfo::getId, spuId).set(SpuInfo::getPublishStatus, SpuStatus.DOWN.getCode());
-        boolean res = super.update(wrapper);
-
-        if (res) {
-            //rabbitTemplate.convertAndSend();
+        try {
+            rabbitTemplate.convertAndSend(PRODUCT_SPU_EXCHANGE, PRODUCT_SPU_DELETE_ROUTING_KEY, spuId);
             return true;
+        } catch (Exception e) {
+            log.error("商品下架同步搜索索引失败 [spuId={}]", spuId, e);
+            return false;
         }
-
-        return false;
     }
 
     @Override
@@ -277,6 +209,44 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoMapper, SpuInfo> impl
         }
 
         return res;
+    }
+
+    @Override
+    public void rebuildSearchIndex(Integer batchSize) {
+        int size = batchSize == null || batchSize <= 0 ? 100 : batchSize;
+        long current = 1L;
+        long totalPublished = 0L;
+        long totalFailed = 0L;
+
+        while (true) {
+            Page<SpuInfo> page = new Page<>(current, size);
+            LambdaQueryWrapper<SpuInfo> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(SpuInfo::getPublishStatus, SpuStatus.UP.getCode());
+            IPage<SpuInfo> spuPage = super.page(page, wrapper);
+            List<SpuInfo> records = spuPage.getRecords();
+            if (records == null || records.isEmpty()) {
+                break;
+            }
+
+            List<EsSpuProduct> esProducts = new ArrayList<>();
+            for (SpuInfo record : records) {
+                try {
+                    esProducts.add(spuSearchProductBuilder.build(record.getId()));
+                } catch (Exception e) {
+                    totalFailed++;
+                    log.error("重建商品搜索索引失败 [spuId={}]", record.getId(), e);
+                }
+            }
+            sendSearchDocuments(esProducts);
+            totalPublished += esProducts.size();
+
+            if (spuPage.getCurrent() * spuPage.getSize() >= spuPage.getTotal()) {
+                break;
+            }
+            current++;
+        }
+
+        log.info("重建商品搜索索引完成 [batchSize={}, published={}, failed={}]", size, totalPublished, totalFailed);
     }
 
     @Override

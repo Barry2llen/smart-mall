@@ -1,7 +1,7 @@
 package edu.nchu.mall.components.feign.search;
 
 import edu.nchu.mall.models.annotation.validation.NotNullCollection;
-import edu.nchu.mall.models.document.EsProduct;
+import edu.nchu.mall.models.document.EsSpuProduct;
 import edu.nchu.mall.models.model.R;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -13,8 +13,8 @@ import java.util.List;
 @FeignClient("search")
 public interface SearchFeignClient {
     @PostMapping("/product")
-    R<?> saveProduct(@RequestBody EsProduct body);
+    R<?> saveProduct(@RequestBody EsSpuProduct body);
 
     @PostMapping("/product/bulk")
-    R<?> saveProductAll(@RequestBody @Valid @NotNullCollection List<EsProduct> products);
+    R<?> saveProductAll(@RequestBody @Valid @NotNullCollection List<EsSpuProduct> products);
 }

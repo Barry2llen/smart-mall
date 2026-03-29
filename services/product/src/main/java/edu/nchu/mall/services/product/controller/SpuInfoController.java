@@ -39,6 +39,15 @@ public class SpuInfoController {
         return R.success(spuInfoService.getBatchSpuInfo(spuIds));
     }
 
+    @Hidden
+    @Parameters(@Parameter(name = "batchSize", description = "每批重建数量"))
+    @Operation(summary = "重建商品搜索索引")
+    @PostMapping("/search/reindex")
+    public R<?> rebuildSearchIndex(@RequestParam(defaultValue = "100") Integer batchSize) {
+        spuInfoService.rebuildSearchIndex(batchSize);
+        return R.success();
+    }
+
     @Parameters(@Parameter(name = "sid", description = "Spu信息主键"))
     @Operation(summary = "获取Spu信息详情")
     @GetMapping("/{sid}")

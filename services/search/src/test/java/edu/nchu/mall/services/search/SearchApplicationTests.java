@@ -1,113 +1,84 @@
 package edu.nchu.mall.services.search;
 
-import edu.nchu.mall.components.exception.CustomException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.nchu.mall.services.search.document.Product;
-import edu.nchu.mall.services.search.document.User;
 import edu.nchu.mall.services.search.dto.ProductSearchParam;
 import edu.nchu.mall.services.search.dto.ProductSearchResult;
-import edu.nchu.mall.services.search.service.ProductService;
-import edu.nchu.mall.services.search.service.UserService;
+import edu.nchu.mall.services.search.service.support.ProductMessageConverter;
+import edu.nchu.mall.services.search.service.support.ProductSearchMapper;
 import edu.nchu.mall.services.search.utils.QueryUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
-import org.springframework.http.HttpStatus;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
 
-@Slf4j
-@SpringBootTest
-public class SearchApplicationTests {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-    @Autowired
-    ElasticsearchOperations elasticsearchOperations;
-
-    @Autowired
-    UserService userService;
-
-    @Autowired
-    ProductService productService;
-
-    //@Test
-    void testSaveUser() {
-        User user = new User();
-        user.setName("张三");
-        user.setUsername("zhangsan");
-        user.setPassword("<PASSWORD>");
-        user.setAddress("上海");
-        user.setRegistryDate(new java.util.Date());
-        user.setAge(18);
-        user.setEmail("<EMAIL>@qq.com");
-        boolean res = userService.save(user);
-        log.info("保存用户结果：{}", res);
-    }
-
-    //@Test
-    void testQuery() {
-        Criteria.where("name").contains("张三");
-        Criteria criteria = Criteria.or().subCriteria(
-                Criteria.where("age").is(18)
-        );
-        Query query = new CriteriaQuery(criteria);
-        SearchHits<User> reslut = elasticsearchOperations.search(query, User.class);
-        log.warn("Searched {} elements:", reslut.getTotalHits());
-        for (SearchHit<User> hit : reslut) {
-            log.warn("Element id {} : {}", hit.getId(), hit.getContent());
-        }
-    }
-
+class SearchApplicationTests {
 
     @Test
-    void testProductQuery() {
-        ProductSearchParam param = new ProductSearchParam();
-        param.setKeyword("iPhone");
-//        param.setHasStock(1);
-        param.setCatalogId(225L);
-        //param.setBrandIds(List.of(1L));
-//        param.setAttrs(List.of("2017506484590100481_iPhone 17"));
-        param.setSkuPrice("6000_10000");
+    void productMessageConverterShouldConvertLinkedHashMapPayload() {
+        ProductMessageConverter converter = new ProductMessageConverter(new ObjectMapper());
 
-        Query query = null;
-        QueryUtils.ProductQuery productQuery = new QueryUtils.ProductQuery();
-        try{
-            query = productQuery.buildQuery(param);
-        }catch (Exception e){
-            throw new CustomException("封装商品查询请求失败", e, HttpStatus.BAD_REQUEST);
-        }
+        LinkedHashMap<String, Object> payload = new LinkedHashMap<>();
+        payload.put("spuId", "1001");
+        payload.put("spuName", "iPhone 17");
 
-        SearchHits<Product> result = elasticsearchOperations.search(query, Product.class);
-        for (SearchHit<Product> hit : result) {
-            log.warn("Element id {} : {}", hit.getId(), hit.getContent());
-        }
+        List<Product> products = converter.toProducts(List.of(payload));
+
+        assertEquals(1, products.size());
+        assertEquals("1001", products.get(0).getSpuId());
+        assertEquals("1001", products.get(0).getId());
+        assertEquals("iPhone 17", products.get(0).getSpuName());
     }
 
     @Test
-    void testProductService() {
-        ProductSearchParam param = new ProductSearchParam();
-        param.setKeyword("iPhone");
-        param.setHasStock(0);
-        param.setCatalogId(225L);
-        param.setAttrs(List.of("2017506484590100481_iPhone Air:iPhone 17"));
-        param.setSkuPrice("_6000");
+    void productSearchMapperShouldMapSpuCardFields() {
+        Product product = new Product();
+        product.setSpuId("2001");
+        product.setDefaultSkuId("3001");
+        product.setSpuName("MateBook X");
+        product.setDefaultImage("cover.jpg");
+        product.setMinPrice(new BigDecimal("5999"));
+        product.setMaxPrice(new BigDecimal("7999"));
+        product.setSaleCount(18L);
+        product.setHasStock(true);
+        product.setHotScore(99L);
+        product.setBrandId("12");
+        product.setBrandName("Huawei");
+        product.setBrandImg("brand.png");
+        product.setCatalogId("225");
+        product.setCatalogName("笔记本");
 
-        Query query = null;
-        QueryUtils.ProductQuery productQuery = new QueryUtils.ProductQuery();
-        try{
-            query = productQuery.buildQuery(param);
-        }catch (Exception e){
-            throw new CustomException("封装商品查询请求失败", e, HttpStatus.BAD_REQUEST);
-        }
+        ProductSearchResult.ProductItem item = new ProductSearchMapper().toProductItem(product);
 
-        ProductSearchResult result = productService.search(param);
-        log.warn("Search hits: {}", result.getTotal());
-        log.warn("Search response: {}", result);
+        assertEquals(2001L, item.getSpuId());
+        assertEquals(3001L, item.getDefaultSkuId());
+        assertEquals("MateBook X", item.getSpuName());
+        assertEquals(new BigDecimal("5999"), item.getMinPrice());
+        assertEquals("Huawei", item.getBrandName());
+        assertEquals("笔记本", item.getCatalogName());
     }
 
+    @Test
+    void queryBuilderShouldAcceptLegacyPriceAndSortParams() throws Exception {
+        ProductSearchParam param = new ProductSearchParam();
+        param.setKeyword("iPhone");
+        param.setCatalogId(225L);
+        param.setHasStock(1);
+        param.setSkuPrice("3000_6000");
+        param.setSort(List.of("skuPrice_desc"));
+        param.setPageNum(2);
+        param.setPageSize(20);
+
+        Query query = new QueryUtils.ProductQuery().buildQuery(param);
+
+        assertNotNull(query);
+        assertNotNull(query.getPageable());
+        assertEquals(2, query.getPageable().getPageNumber());
+        assertEquals(20, query.getPageable().getPageSize());
+    }
 }
